@@ -17,5 +17,5 @@ public class Beneficiario extends AuditableBaseEntity {
      private int numCuentaBeneficiario;
      private String beneficiario;
 
-
+     // commit desde github desktop
 }
