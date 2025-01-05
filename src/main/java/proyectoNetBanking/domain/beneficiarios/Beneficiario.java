@@ -11,11 +11,11 @@ import proyectoNetBanking.domain.usuarios.Usuario;
 @Table(name = "beneficiarios")
 public class Beneficiario extends AuditableBaseEntity {
 
-     @ManyToOne
+     @ManyToOne //varios beneficiarios pueden estar agregados por un usuario
      @JoinColumn(name = "usuario_id")
      private Usuario usuarioId;
-     private int numCuentaBeneficiario;
-     private String beneficiario;
+     private String numCuentaBeneficiario;
+     private String nombreBeneficiario;
 
      // commit desde github desktop
 }
