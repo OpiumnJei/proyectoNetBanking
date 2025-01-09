@@ -1,11 +1,16 @@
 package proyectoNetBanking.domain.usuarios;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 @Table(name = "tipo_usuarios")
 @Entity(name = "TipoUsuario")
+@Getter
+@Setter
 public class TipoUsuario {
 
+    //admin o cliente
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

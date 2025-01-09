@@ -73,6 +73,14 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+
+		<!--DEPENDENCIA USADA PARA EL HASHING DE CONTRASENIAS -->
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-core</artifactId>
+			<version>5.8.0</version> <!-- Ajusta a la versión que uses -->
+		</dependency>
+
 	</dependencies>
 
 	<build>
