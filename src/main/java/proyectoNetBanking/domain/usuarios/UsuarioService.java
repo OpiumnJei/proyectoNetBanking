@@ -4,7 +4,9 @@ package proyectoNetBanking.domain.usuarios;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import proyectoNetBanking.domain.common.GeneradorId;
 import proyectoNetBanking.domain.cuentasAhorro.CuentaAhorro;
+import proyectoNetBanking.domain.cuentasAhorro.CuentaAhorroRepository;
 import proyectoNetBanking.infra.errors.DuplicatedItemsException;
 
 @Service //marcamos la clase como un servicio/componente de spring
@@ -20,9 +22,15 @@ public class UsuarioService {
     @Autowired
     private TipoUsuarioRepository tipoUsuarioRepository;
 
+    //inyectamos el generador de ids
+    @Autowired
+    private GeneradorId generadorId;
+
+    @Autowired
+    private CuentaAhorroRepository cuentaRepository;
+
     //crear un cliente
     public void crearCliente(DatosUsuariosDTO datosUsuariosDTO) {
-
 
         //se valida que tanto la cedula y el correo no esten previamente registrados en la bd
         if (usuarioRepository.existsByCedulaUsuario(datosUsuariosDTO.cedula())) {
@@ -36,7 +44,6 @@ public class UsuarioService {
         TipoUsuario tipoUsuarioEntity = tipoUsuarioRepository.findById(datosUsuariosDTO.tipoUsuarioId())
                 .orElseThrow(() -> new RuntimeException("Tipo de usuario no encontrado"));
 
-
         //crear instancia de usuario
         Usuario usuario = new Usuario();
         usuario.setNombre(datosUsuariosDTO.nombre());
@@ -48,10 +55,31 @@ public class UsuarioService {
         usuario.setMontoInicial(datosUsuariosDTO.montoInicial());
 
         usuarioRepository.save(usuario);
-
-        //asignarle cuenta de ahorro al usuario, que se marcara como la principal
-        CuentaAhorro cuentaUsuarioPrincipal = new CuentaAhorro();
     }
 
+
+    //asignar cuenta de ahorro principal al usuario
+    public void asignarCuentaPrincipal(Usuario usuario) {
+        //crear instancia de cuenta de ahorro
+        CuentaAhorro cuentaUsuarioPrincipal = new CuentaAhorro();
+        cuentaUsuarioPrincipal.setIdProducto(generarIdUnicoProducto()); // se coloca el id
+        cuentaUsuarioPrincipal.setUsuario(usuario); //aunque se coloque la entidad usuario completa, hibernate solamente toma el id
+        cuentaUsuarioPrincipal.setEsPrincipal(true);
+        cuentaUsuarioPrincipal.setSaldoDisponible(usuario.getMontoInicial());
+
+        //guardar la cuenta
+        cuentaRepository.save(cuentaUsuarioPrincipal);
+    }
+
+    //generar id del producto y verificar que no exista un producto con ese id
+    public String generarIdUnicoProducto() {
+        String idGenerado;
+        do {
+            idGenerado = generadorId.generarIdProducto();
+        }
+        while (cuentaRepository.existsByIdProducto(idGenerado)); //validar que el id del producto  generado no exista en la bd
+        return idGenerado;
+
+    }
 
 }

@@ -1,12 +1,16 @@
 package proyectoNetBanking.domain.cuentasAhorro;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 import proyectoNetBanking.domain.common.AuditableBaseEntity;
 import proyectoNetBanking.domain.productos.EstadoProducto;
 import proyectoNetBanking.domain.usuarios.Usuario;
 
 @Entity(name = "cuentaAhorro")
 @Table(name = "cuentas_ahorro")
+@Setter
+@Getter
 public class CuentaAhorro extends AuditableBaseEntity {
 
     @Column(unique = true, nullable = false)
