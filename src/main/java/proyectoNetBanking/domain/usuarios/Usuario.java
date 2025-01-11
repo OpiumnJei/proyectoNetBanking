@@ -43,6 +43,4 @@ public class Usuario extends AuditableBaseEntity {
     private List<TarjetaCredito> tarjetasCredito;
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL)
     private List<Prestamo> prestamos;
-
-
 }

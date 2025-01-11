@@ -33,10 +33,10 @@ public class UsuarioService {
     public void crearCliente(DatosUsuariosDTO datosUsuariosDTO) {
 
         //se valida que tanto la cedula y el correo no esten previamente registrados en la bd
-        if (usuarioRepository.existsByCedulaUsuario(datosUsuariosDTO.cedula())) {
+        if (usuarioRepository.existsByCedula(datosUsuariosDTO.cedula())) {
             throw new DuplicatedItemsException("La cédula ya se encuentra registrada en el sistema.");
         }
-        if (usuarioRepository.existsByCorreoUsuario(datosUsuariosDTO.correo())) {
+        if (usuarioRepository.existsByCorreo(datosUsuariosDTO.correo())) {
             throw new DuplicatedItemsException("El correo ya se encuentra registrado en el sistema.");
         }
 
@@ -79,7 +79,6 @@ public class UsuarioService {
         }
         while (cuentaRepository.existsByIdProducto(idGenerado)); //validar que el id del producto  generado no exista en la bd
         return idGenerado;
-
     }
 
 }

@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 // Loong Este es el tipo de dato de la clave primaria (ID) de la entidad Usuario.
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
-    boolean existsByCedulaUsuario(String cedula);
+    boolean existsByCedula(@NotBlank String cedula);
 
-    boolean existsByCorreoUsuario(@NotBlank String correo);
+    boolean existsByCorreo(@NotBlank String correo);
 }
