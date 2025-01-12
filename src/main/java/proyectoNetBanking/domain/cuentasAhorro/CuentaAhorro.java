@@ -16,8 +16,8 @@ public class CuentaAhorro extends AuditableBaseEntity {
     @Column(unique = true, nullable = false)
     private String idProducto; // identificador unico en el sistema
     private double saldoDisponible;
-    private boolean esPrincipal;
-
+    private boolean esPrincipal = false; //este campo por default es false, ya que toda cuenta creada luego de la creacion de un usuario es secundaria
+    private String proposito;
     @OneToOne
     @JoinColumn(name = "estado_producto_id")
     private EstadoProducto estadoProducto;
