@@ -1,12 +1,16 @@
 package proyectoNetBanking.domain.tarjetasCredito;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 import proyectoNetBanking.domain.common.AuditableBaseEntity;
 import proyectoNetBanking.domain.productos.EstadoProducto;
 import proyectoNetBanking.domain.usuarios.Usuario;
 
 @Entity(name = "TarjetaCredito")
 @Table(name = "tarjetas_credito")
+@Setter
+@Getter
 public class TarjetaCredito extends AuditableBaseEntity{
 
     @Column(unique = true, nullable = false)

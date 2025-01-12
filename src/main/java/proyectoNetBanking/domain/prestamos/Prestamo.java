@@ -1,12 +1,16 @@
 package proyectoNetBanking.domain.prestamos;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 import proyectoNetBanking.domain.common.AuditableBaseEntity;
 import proyectoNetBanking.domain.productos.EstadoProducto;
 import proyectoNetBanking.domain.usuarios.Usuario;
 
 @Entity(name = "Prestamo")
 @Table(name = "prestamos")
+@Setter
+@Getter
 public class Prestamo extends AuditableBaseEntity {
 
     @Column(unique = true, nullable = false)

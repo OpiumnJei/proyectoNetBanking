@@ -1,6 +1,7 @@
 package proyectoNetBanking.domain.usuarios;
 
 import jakarta.validation.constraints.*;
+import org.springframework.beans.factory.annotation.Value;
 
 public record DatosUsuariosDTO(
         @NotBlank
@@ -17,7 +18,8 @@ public record DatosUsuariosDTO(
         @NotEmpty
         Long tipoUsuarioId,
         @NotNull
-        @DecimalMin(value = "0.0", inclusive = true, message = "El monto inicial no puede ser menor a cero")//se usa inclusive para asegurarnos se acepte el valor inicial como un cero
+        @DecimalMin(value = "0.0", inclusive = true, message = "El monto inicial no puede ser menor a cero")//se usa inclusive para asegurarnos se acepte el valor inicial como un cer
+        @Value("0.0") //valor por defecto en caso de que no se especifique un monto inicial
         Double montoInicial
 ) {
 }
