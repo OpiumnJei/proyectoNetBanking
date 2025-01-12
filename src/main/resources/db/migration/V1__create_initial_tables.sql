@@ -69,6 +69,7 @@ CREATE TABLE `cuentas_ahorro` (
   `id_producto` varchar(255) NOT NULL,
   `saldo_disponible` double NOT NULL,
   `es_principal` bit(1) NOT NULL,
+  `proposito`varchar(100),
   `usuario_id` bigint(20) NOT NULL,
   `estado_producto_id` bigint(20) DEFAULT NULL,
   `created` datetime(6) DEFAULT NULL,
