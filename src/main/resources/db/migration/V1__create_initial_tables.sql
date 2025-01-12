@@ -1,8 +1,8 @@
 -- TABLATIPO CATALOGO QUE ALMACENA LOS ESTADOS DE UN PRODUCTO
 
 CREATE TABLE `estado_productos` (
-  `created` datetime(6) DEFAULT NULL,
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `created` datetime(6) DEFAULT NULL,
   `last_modified` datetime(6) DEFAULT NULL,
   `created_by` varchar(255) DEFAULT NULL,
   `last_modified_by` varchar(255) DEFAULT NULL,
@@ -15,8 +15,8 @@ CREATE TABLE `estado_productos` (
 
 CREATE TABLE `tipo_usuarios` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `descripcion` varchar(255) DEFAULT NULL,
   `nombre_tipo_usuario` varchar(255) DEFAULT NULL,
+  `descripcion` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -24,19 +24,19 @@ CREATE TABLE `tipo_usuarios` (
 -- TABLA DE USUARIOS
 
 CREATE TABLE `usuarios` (
-  `activo` bit(1) NOT NULL,
-  `monto_inicial` double NOT NULL,
-  `created` datetime(6) DEFAULT NULL,
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `last_modified` datetime(6) DEFAULT NULL,
-  `tipo_usuario_id` bigint(20) DEFAULT NULL,
+  `nombre` varchar(255) DEFAULT NULL,
   `apellido` varchar(255) DEFAULT NULL,
   `cedula` varchar(255) DEFAULT NULL,
   `correo` varchar(255) DEFAULT NULL,
+  `password` varchar(255) DEFAULT NULL,
+  `tipo_usuario_id` bigint(20) DEFAULT NULL,
+  `monto_inicial` double NOT NULL,
+  `activo` bit(1) NOT NULL,
+  `created` datetime(6) DEFAULT NULL,
+  `last_modified` datetime(6) DEFAULT NULL,
   `created_by` varchar(255) DEFAULT NULL,
   `last_modified_by` varchar(255) DEFAULT NULL,
-  `nombre` varchar(255) DEFAULT NULL,
-  `password` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `UKefovjjo5q5jlsa0f9eoptdjly` (`cedula`),
   UNIQUE KEY `UKcdmw5hxlfj78uf4997i3qyyw5` (`correo`),
@@ -48,14 +48,14 @@ CREATE TABLE `usuarios` (
 -- TABLA DE BENEFICIRIOS
 
 CREATE TABLE `beneficiarios` (
-  `created` datetime(6) DEFAULT NULL,
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `last_modified` datetime(6) DEFAULT NULL,
+  `num_cuenta_beneficiario` varchar(255) DEFAULT NULL,
   `usuario_id` bigint(20) DEFAULT NULL,
+  `nombre_beneficiario` varchar(255) DEFAULT NULL,
+  `created` datetime(6) DEFAULT NULL,
+  `last_modified` datetime(6) DEFAULT NULL,
   `created_by` varchar(255) DEFAULT NULL,
   `last_modified_by` varchar(255) DEFAULT NULL,
-  `nombre_beneficiario` varchar(255) DEFAULT NULL,
-  `num_cuenta_beneficiario` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `FK8n18a6nyiojmflkhpdh2m94vy` (`usuario_id`),
   CONSTRAINT `FK8n18a6nyiojmflkhpdh2m94vy` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`)
@@ -65,15 +65,15 @@ CREATE TABLE `beneficiarios` (
 -- TABLA DE CUENTAS DE AHORRO
 
 CREATE TABLE `cuentas_ahorro` (
-  `es_principal` bit(1) NOT NULL,
-  `saldo_disponible` double NOT NULL,
-  `created` datetime(6) DEFAULT NULL,
-  `estado_producto_id` bigint(20) DEFAULT NULL,
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `last_modified` datetime(6) DEFAULT NULL,
-  `usuario_id` bigint(20) NOT NULL,
-  `created_by` varchar(255) DEFAULT NULL,
   `id_producto` varchar(255) NOT NULL,
+  `saldo_disponible` double NOT NULL,
+  `es_principal` bit(1) NOT NULL,
+  `usuario_id` bigint(20) NOT NULL,
+  `estado_producto_id` bigint(20) DEFAULT NULL,
+  `created` datetime(6) DEFAULT NULL,
+  `last_modified` datetime(6) DEFAULT NULL,
+  `created_by` varchar(255) DEFAULT NULL,
   `last_modified_by` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `UKhx57ytog6now5uij2wm52c155` (`id_producto`),
@@ -87,16 +87,16 @@ CREATE TABLE `cuentas_ahorro` (
 -- TABLAS DE PRESTAMOS
 
 CREATE TABLE `prestamos` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `id_producto` varchar(255) NOT NULL,
   `monto_apagar` double NOT NULL,
   `monto_pagado` double NOT NULL,
   `monto_prestamo` double NOT NULL,
-  `created` datetime(6) DEFAULT NULL,
-  `estado_producto_id` bigint(20) DEFAULT NULL,
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `last_modified` datetime(6) DEFAULT NULL,
   `usuario_id` bigint(20) NOT NULL,
+  `estado_producto_id` bigint(20) DEFAULT NULL,
+  `created` datetime(6) DEFAULT NULL,
+  `last_modified` datetime(6) DEFAULT NULL,
   `created_by` varchar(255) DEFAULT NULL,
-  `id_producto` varchar(255) NOT NULL,
   `last_modified_by` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `UKpos33kmsc3mvqerbbo9v680i4` (`id_producto`),
@@ -110,16 +110,16 @@ CREATE TABLE `prestamos` (
 -- TABLA DE TARJETAS DE CREDITO
 
 CREATE TABLE `tarjetas_credito` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `id_producto` varchar(255) NOT NULL,
   `limite_credito` double NOT NULL,
   `saldo_disponible` double NOT NULL,
   `saldo_por_pagar` double NOT NULL,
-  `created` datetime(6) DEFAULT NULL,
-  `estado_producto` bigint(20) DEFAULT NULL,
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `last_modified` datetime(6) DEFAULT NULL,
   `usuario_id` bigint(20) NOT NULL,
+  `estado_producto` bigint(20) DEFAULT NULL,
+  `created` datetime(6) DEFAULT NULL,
+  `last_modified` datetime(6) DEFAULT NULL,
   `created_by` varchar(255) DEFAULT NULL,
-  `id_producto` varchar(255) NOT NULL,
   `last_modified_by` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `UKnfkog3klotkvm0xqmdyiem1d3` (`id_producto`),
@@ -133,11 +133,11 @@ CREATE TABLE `tarjetas_credito` (
 -- TABLA DE TRANSACCIONES
 
 CREATE TABLE `transacciones` (
-  `tipo_transaccion` tinyint(4) DEFAULT NULL,
-  `fecha` datetime(6) DEFAULT NULL,
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `usuario_destino` bigint(20) DEFAULT NULL,
+  `tipo_transaccion` tinyint(4) DEFAULT NULL,
   `usuario_origen` bigint(20) DEFAULT NULL,
+  `usuario_destino` bigint(20) DEFAULT NULL,
+  `fecha` datetime(6) DEFAULT NULL,
   `descripcion_transaccion` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `FKto1yy2ibwvcbcvsad5n56ccdb` (`usuario_destino`),

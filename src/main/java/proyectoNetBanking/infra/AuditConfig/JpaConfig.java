@@ -1,10 +1,15 @@
 package proyectoNetBanking.infra.AuditConfig;
 
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.domain.AuditorAware;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
-//clase principal encargada de manejar la auditoria con jpa
+//su propósito principal es habilitar la auditoría mediante la anotación @EnableJpaAuditing.
 @Configuration
-@EnableJpaAuditing //habilitar la auditoria para jpa
+@EnableJpaAuditing(auditorAwareRef = "auditorAwareImpl") // Refiere al bean registrado manualmente
 public class JpaConfig {
+
+    public AuditorAware<String> auditorAwareImpl() {
+        return new AuditorAwareImpl();
+    }
 }
