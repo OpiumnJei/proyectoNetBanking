@@ -7,6 +7,7 @@ import proyectoNetBanking.domain.cuentasAhorro.CuentaAhorro;
 import proyectoNetBanking.domain.prestamos.Prestamo;
 import proyectoNetBanking.domain.tarjetasCredito.TarjetaCredito;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Entity(name = "Usuario") //nombre de la entiddad
@@ -33,7 +34,7 @@ public class Usuario extends AuditableBaseEntity {
     @ManyToOne //relacion unidirecional con la clase TipoUsuario
     @JoinColumn(name = "tipo_usuario_id")
     private TipoUsuario tipoUsuario;
-    private double montoInicial;
+    private BigDecimal montoInicial;
     private boolean activo;
 
     //tipos de productos que un usuario puede tener

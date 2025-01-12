@@ -16,6 +16,7 @@ import proyectoNetBanking.domain.tarjetasCredito.TarjetaCredito;
 import proyectoNetBanking.domain.tarjetasCredito.TarjetaRepository;
 import proyectoNetBanking.infra.errors.DuplicatedItemsException;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service //marcamos la clase como un servicio/componente de spring
@@ -31,9 +32,8 @@ public class UsuarioService {
     @Autowired
     private TipoUsuarioRepository tipoUsuarioRepository;
 
-    //inyectamos el generador de ids
     @Autowired
-    private GeneradorId generadorId;
+    private GeneradorId generadorId; //inyectamos el generador de ids
 
     @Autowired
     private CuentaAhorroRepository cuentaRepository;
@@ -48,7 +48,7 @@ public class UsuarioService {
     private EstadoProductoRepository estadoProductoRepository;
 
     //crear un cliente
-    public void crearCliente(DatosUsuariosDTO datosUsuariosDTO) {
+    public void crearCliente(DatosUsuarioDTO datosUsuariosDTO) {
 
         //se valida que tanto la cedula y el correo no esten previamente registrados en la bd
         if (usuarioRepository.existsByCedula(datosUsuariosDTO.cedula())) {
@@ -73,8 +73,9 @@ public class UsuarioService {
         usuario.setMontoInicial(datosUsuariosDTO.montoInicial());
 
         usuarioRepository.save(usuario);
-    }
 
+        asignarCuentaPrincipal(usuario);//colocarle cuenta principal por motivos de logica de negocio
+    }
 
     //asignar cuenta de ahorro principal al usuario
     public void asignarCuentaPrincipal(Usuario usuario) {
@@ -83,7 +84,14 @@ public class UsuarioService {
         cuentaUsuarioPrincipal.setIdProducto(generarIdUnicoProducto()); // se coloca el id
         cuentaUsuarioPrincipal.setUsuario(usuario); //aunque se coloque la entidad usuario completa, hibernate solamente toma el id
         cuentaUsuarioPrincipal.setEsPrincipal(true);
+        cuentaUsuarioPrincipal.setProposito("Fondo de emergencia");
         cuentaUsuarioPrincipal.setSaldoDisponible(usuario.getMontoInicial());
+
+        //antes de asignarle un estado a la cuenta de ahorro, verificar que exista en la bd
+        EstadoProducto estadoActivo = estadoProductoRepository.findByNombreEstado("Activo")
+                .orElseThrow(() -> new RuntimeException("Estado 'Activo' no encontrado"));
+
+        cuentaUsuarioPrincipal.setEstadoProducto(estadoActivo);
 
         //guardar la cuenta
         cuentaRepository.save(cuentaUsuarioPrincipal);
@@ -95,70 +103,9 @@ public class UsuarioService {
         do {
             idGenerado = generadorId.generarIdProducto();
         }
-        while (cuentaRepository.existsByIdProducto(idGenerado)); //validar que el id del producto  generado no exista en la bd
+        while (cuentaRepository.existsByIdProducto(idGenerado)); //validar que el id del producto generado no exista en la bd
         return idGenerado;
     }
-
-    //inactivar un usuario logica 1
-//    public void inactivarUsuario(Long idUsuario) {
-//
-//        Usuario usuario = usuarioRepository.findById(idUsuario)
-//                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-//
-//        //comprobar si el usuario esta activo o no
-//        if (!usuario.isActivo()) {
-//            throw new IllegalStateException("El usuario ya se encuentra inactivo.");
-//        }
-//
-//        usuario.setActivo(false); //se inactiva el usuario
-//        usuarioRepository.save(usuario);//se guarda el usuario inactivo
-//
-//        inactivarProductosUsuario(usuario);
-//    }
-//
-//    private void inactivarProductosUsuario(Usuario usuario) {
-//        // Obtener las cuentas de ahorro del usuario
-//        List<CuentaAhorro> cuentasAhorro = cuentaRepository.findByUsuarioId(usuario.getId());
-//
-//        // Cambiar el estado de las cuentas a "Inactivo"
-//        EstadoProducto estadoInactivo = estadoProductoRepository.findByNombreEstado("Inactivo");
-//
-//        double saldoCuentaNoPrincipal = 0.0; //variable que almacena el saldo de las cuentas NO principales antes de eliminarlas
-//        for (CuentaAhorro cuenta : cuentasAhorro) {
-//            for (CuentaAhorro cuentasNoPrincipal : cuentasAhorro) {
-//                if (!cuentasNoPrincipal.isEsPrincipal() && cuenta.getSaldoDisponible() != 0.0) { //si el saldo el diferente de 0 y ademas no es principal
-//                    saldoCuentaNoPrincipal += cuentasNoPrincipal.getSaldoDisponible(); //suma iterativa
-//                }
-//                cuentaRepository.delete(cuentasNoPrincipal); //una vez determinadas las cuentas se eliminan
-//            }
-//            if (cuenta.isEsPrincipal()) {
-//                cuenta.setSaldoDisponible(cuenta.getSaldoDisponible() + saldoCuentaNoPrincipal);// se le suma el saldo a la cuenta principal
-//            }
-//            cuentaRepository.save(cuenta); //se guarda la cuenta
-//        }
-//
-//        // Inactivar tarjetas de crédito
-//        List<TarjetaCredito> tarjetas = tarjetaRepository.findByUsuarioId(usuario.getId());//se busca en la bd la lista de tarjetas donde los registros que coincidan con el id del usuario
-//        for (TarjetaCredito tarjeta : tarjetas) {
-//            if (tarjeta.getSaldoPorPagar() == 0) { //si la tarjeta no tiene saldo que pagar
-//                tarjeta.setEstadoProducto(estadoInactivo);
-//            } else {
-//                throw new RuntimeException("El usuario aun tiene alguna(s) tarjeta(s) por saldar");
-//            }
-//            tarjetaRepository.save(tarjeta); //se guarda tarjeta
-//        }
-//
-//        // Inactivar préstamos
-//        List<Prestamo> prestamos = prestamoRepository.findByUsuarioId(usuario.getId()); //se busca en la bd la lista de préstamos que tiene asociado un usuario
-//        for (Prestamo prestamo : prestamos) {
-//            if (prestamo.getMontoApagar() == 0) { //si el prestamo no tiene un monto activo que pagar
-//                prestamo.setEstadoProducto(estadoInactivo);
-//            } else {
-//                throw new RuntimeException("El usuario aun tiene algún(os) préstamo(os) por pagar");
-//            }
-//            prestamoRepository.save(prestamo);
-//        }
-//    }
 
     @Transactional // se ejecuta el codigo dentro de una transaccion
     public void inactivarUsuario(Long idUsuario) {
@@ -180,7 +127,7 @@ public class UsuarioService {
     }
 
     private void inactivarProductosUsuario(Usuario usuario) {
-         // se verifica que el estado exista en la bd
+        // se verifica que el estado exista en la bd
         EstadoProducto estadoInactivo = estadoProductoRepository.findByNombreEstado("Inactivo")
                 .orElseThrow(() -> new RuntimeException("Estado 'Inactivo' no encontrado"));
 
@@ -190,26 +137,28 @@ public class UsuarioService {
     }
 
     //metodo encargado de manejar la eliminacion y movimiento de fondos entre cuentas de ahorro
+    @Transactional
     private void manejarCuentasDeAhorro(Usuario usuario, EstadoProducto estadoInactivo) {
         // Obtener las cuentas de ahorro del usuario
         List<CuentaAhorro> cuentasAhorro = cuentaRepository.findByUsuarioId(usuario.getId());
 
         //almacenar la sumatoria de las cuentas de ahorro que no sean principales antes de su eliminacion
-        double saldoCuentasNoPrincipales = cuentasAhorro
+        var saldoCuentasNoPrincipales = cuentasAhorro
                 .stream() // Se convierte la lista en un Stream para procesarla de manera funcional
                 .filter(cuenta -> !cuenta.isEsPrincipal()) // Filtra las cuentas que NO son principales.
-                .mapToDouble(CuentaAhorro::getSaldoDisponible) // Obtiene el saldo disponible de cada cuenta.
-                .sum(); // Suma todos los saldos obtenidos
+                .map(CuentaAhorro::getSaldoDisponible) // Obtiene el saldo disponible de cada cuenta.
+                .reduce(BigDecimal.ZERO, BigDecimal::add); // Suma todos los saldos obtenidos
 
         for (CuentaAhorro cuenta : cuentasAhorro) { //Para cada cuenta de ahorro
             if (!cuenta.isEsPrincipal()) {
-                if (cuenta.getSaldoDisponible() > 0) {
-                    throw new RuntimeException("Una cuenta no principal aún tiene saldo activo.");
+                if (BigDecimal.ZERO.compareTo(cuenta.getSaldoDisponible()) != 0) {
+                        cuenta.setSaldoDisponible(BigDecimal.ZERO); //reducir a 0 el saldo de las cuentas NO pricipales para que se refleje la transaccion entre cuentas
                 }
-                cuentaRepository.delete(cuenta); // Eliminar cuenta no principal
+                cuenta.setEstadoProducto(estadoInactivo); // Eliminar logicamente cuentas no principal
             } else {
                 // Transferir saldo acumulado a la cuenta principal
-                cuenta.setSaldoDisponible(cuenta.getSaldoDisponible() + saldoCuentasNoPrincipales);
+                // como ambos metodos estan referenciados por atributos BigDecimal podemos usar el metodo add
+                cuenta.setSaldoDisponible(cuenta.getSaldoDisponible().add(saldoCuentasNoPrincipales));
                 cuenta.setEstadoProducto(estadoInactivo); // Inactivar cuenta principal
                 cuentaRepository.save(cuenta);
             }
@@ -217,6 +166,7 @@ public class UsuarioService {
     }
 
     //metodo encargado de manejar la inactividad de tarjetas de credito
+    @Transactional
     private void manejarTarjetasCredito(Usuario usuario, EstadoProducto estadoInactivo) {
         // Obtener las tarjetas de credito  del usuario
         List<TarjetaCredito> tarjetas = tarjetaRepository.findByUsuarioId(usuario.getId());
@@ -231,6 +181,7 @@ public class UsuarioService {
     }
 
     // metodo encargado de manejar la inactividad de los prestamos
+    @Transactional
     private void manejarPrestamos(Usuario usuario, EstadoProducto estadoInactivo) {
         // obtener los prestamos asociados al usuario
         List<Prestamo> prestamos = prestamoRepository.findByUsuarioId(usuario.getId());
@@ -243,5 +194,4 @@ public class UsuarioService {
             prestamoRepository.save(prestamo);
         }
     }
-
 }
