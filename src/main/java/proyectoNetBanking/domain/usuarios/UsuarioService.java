@@ -47,6 +47,10 @@ public class UsuarioService {
     @Autowired
     private EstadoProductoRepository estadoProductoRepository;
 
+    //Estados que puede manejar una cuenta
+    private static final String ESTADO_INACTIVO = "Inactivo";
+    private static final String ESTADO_ACTIVO = "Activo";
+
     //crear un cliente
     public void crearCliente(DatosUsuarioDTO datosUsuariosDTO) {
 
@@ -86,25 +90,10 @@ public class UsuarioService {
         cuentaUsuarioPrincipal.setEsPrincipal(true);
         cuentaUsuarioPrincipal.setProposito("Fondo de emergencia");
         cuentaUsuarioPrincipal.setSaldoDisponible(usuario.getMontoInicial());
-
-        //antes de asignarle un estado a la cuenta de ahorro, verificar que exista en la bd
-        EstadoProducto estadoActivo = estadoProductoRepository.findByNombreEstado("Activo")
-                .orElseThrow(() -> new RuntimeException("Estado 'Activo' no encontrado"));
-
-        cuentaUsuarioPrincipal.setEstadoProducto(estadoActivo);
+        cuentaUsuarioPrincipal.setEstadoProducto(colocarEstadoProductos(ESTADO_ACTIVO));
 
         //guardar la cuenta
         cuentaRepository.save(cuentaUsuarioPrincipal);
-    }
-
-    //generar id del producto y verificar que no exista un producto con ese id
-    public String generarIdUnicoProducto() {
-        String idGenerado;
-        do {
-            idGenerado = generadorId.generarIdProducto();
-        }
-        while (cuentaRepository.existsByIdProducto(idGenerado)); //validar que el id del producto generado no exista en la bd
-        return idGenerado;
     }
 
     @Transactional // se ejecuta el codigo dentro de una transaccion
@@ -127,18 +116,16 @@ public class UsuarioService {
     }
 
     private void inactivarProductosUsuario(Usuario usuario) {
-        // se verifica que el estado exista en la bd
-        EstadoProducto estadoInactivo = estadoProductoRepository.findByNombreEstado("Inactivo")
-                .orElseThrow(() -> new RuntimeException("Estado 'Inactivo' no encontrado"));
 
-        manejarCuentasDeAhorro(usuario, estadoInactivo); // Manejar cuentas de ahorro
-        manejarTarjetasCredito(usuario, estadoInactivo);  // Manejar tarjetas de crédito
-        manejarPrestamos(usuario, estadoInactivo);  // Manejar préstamos
+        manejarCuentasDeAhorro(usuario); // Manejar cuentas de ahorro
+        manejarTarjetasCredito(usuario);  // Manejar tarjetas de crédito
+        manejarPrestamos(usuario);  // Manejar préstamos
     }
 
     //metodo encargado de manejar la eliminacion y movimiento de fondos entre cuentas de ahorro
+
     @Transactional
-    private void manejarCuentasDeAhorro(Usuario usuario, EstadoProducto estadoInactivo) {
+    private void manejarCuentasDeAhorro(Usuario usuario) {
         // Obtener las cuentas de ahorro del usuario
         List<CuentaAhorro> cuentasAhorro = cuentaRepository.findByUsuarioId(usuario.getId());
 
@@ -154,35 +141,35 @@ public class UsuarioService {
                 if (BigDecimal.ZERO.compareTo(cuenta.getSaldoDisponible()) != 0) {
                         cuenta.setSaldoDisponible(BigDecimal.ZERO); //reducir a 0 el saldo de las cuentas NO pricipales para que se refleje la transaccion entre cuentas
                 }
-                cuenta.setEstadoProducto(estadoInactivo); // Eliminar logicamente cuentas no principal
+                cuenta.setEstadoProducto(colocarEstadoProductos(ESTADO_INACTIVO)); // Eliminar logicamente cuentas no principal
             } else {
                 // Transferir saldo acumulado a la cuenta principal
                 // como ambos metodos estan referenciados por atributos BigDecimal podemos usar el metodo add
                 cuenta.setSaldoDisponible(cuenta.getSaldoDisponible().add(saldoCuentasNoPrincipales));
-                cuenta.setEstadoProducto(estadoInactivo); // Inactivar cuenta principal
+                cuenta.setEstadoProducto(colocarEstadoProductos(ESTADO_INACTIVO)); // Inactivar cuenta principal
                 cuentaRepository.save(cuenta);
             }
         }
     }
-
     //metodo encargado de manejar la inactividad de tarjetas de credito
+
     @Transactional
-    private void manejarTarjetasCredito(Usuario usuario, EstadoProducto estadoInactivo) {
-        // Obtener las tarjetas de credito  del usuario
+    private void manejarTarjetasCredito(Usuario usuario) {
+        // Obtener las tarjetas de credito del usuario
         List<TarjetaCredito> tarjetas = tarjetaRepository.findByUsuarioId(usuario.getId());
 
         for (TarjetaCredito tarjeta : tarjetas) {
             if (tarjeta.getSaldoPorPagar() > 0) {//si el usuario aun debe saldar
                 throw new RuntimeException("El usuario tiene tarjetas de crédito con saldo pendiente.");
             }
-            tarjeta.setEstadoProducto(estadoInactivo);
+            tarjeta.setEstadoProducto(colocarEstadoProductos(ESTADO_INACTIVO));
             tarjetaRepository.save(tarjeta);
         }
     }
-
     // metodo encargado de manejar la inactividad de los prestamos
+
     @Transactional
-    private void manejarPrestamos(Usuario usuario, EstadoProducto estadoInactivo) {
+    private void manejarPrestamos(Usuario usuario) {
         // obtener los prestamos asociados al usuario
         List<Prestamo> prestamos = prestamoRepository.findByUsuarioId(usuario.getId());
 
@@ -190,8 +177,24 @@ public class UsuarioService {
             if (prestamo.getMontoApagar() > 0) { //si el usuario aun debe dinero del prestamo
                 throw new RuntimeException("El usuario tiene préstamos con saldo pendiente.");
             }
-            prestamo.setEstadoProducto(estadoInactivo);
+            prestamo.setEstadoProducto(colocarEstadoProductos(ESTADO_INACTIVO));
             prestamoRepository.save(prestamo);
         }
+    }
+
+    //generar id del producto y verificar que no exista un producto con ese id
+    public String generarIdUnicoProducto() {
+        String idGenerado;
+        do {
+            idGenerado = generadorId.generarIdProducto();
+        }
+        while (cuentaRepository.existsByIdProducto(idGenerado)); //validar que el id del producto generado no exista en la bd
+        return idGenerado;
+    }
+
+    public EstadoProducto colocarEstadoProductos(String nombreEstado) {
+
+        return estadoProductoRepository.findByNombreEstado(nombreEstado)
+                .orElseThrow(() -> new RuntimeException("El estado no existe"));
     }
 }
