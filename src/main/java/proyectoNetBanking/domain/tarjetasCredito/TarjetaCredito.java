@@ -7,6 +7,8 @@ import proyectoNetBanking.domain.common.AuditableBaseEntity;
 import proyectoNetBanking.domain.productos.EstadoProducto;
 import proyectoNetBanking.domain.usuarios.Usuario;
 
+import java.math.BigDecimal;
+
 @Entity(name = "TarjetaCredito")
 @Table(name = "tarjetas_credito")
 @Setter
@@ -15,10 +17,9 @@ public class TarjetaCredito extends AuditableBaseEntity{
 
     @Column(unique = true, nullable = false)
     private String idProducto; // identificador unico en el sistema
-    private double limiteCredito;
-    private double saldoDisponible;
-    private double saldoPorPagar;
-
+    private BigDecimal limiteCredito;
+    private BigDecimal saldoDisponible;
+    private BigDecimal saldoPorPagar;
 
     @OneToOne
     @JoinColumn(name = "estado_producto")//nombre que se le agrega al campo derivado de la relacion en la db

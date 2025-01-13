@@ -24,7 +24,6 @@ public class Transaccion {
     @JoinColumn(name="usuario_destino")
     private Usuario usuarioDestino;
 
-
     private LocalDateTime fecha;
 
     private String descripcionTransaccion;

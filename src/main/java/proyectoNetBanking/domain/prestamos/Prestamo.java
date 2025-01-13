@@ -7,6 +7,8 @@ import proyectoNetBanking.domain.common.AuditableBaseEntity;
 import proyectoNetBanking.domain.productos.EstadoProducto;
 import proyectoNetBanking.domain.usuarios.Usuario;
 
+import java.math.BigDecimal;
+
 @Entity(name = "Prestamo")
 @Table(name = "prestamos")
 @Setter
@@ -15,9 +17,9 @@ public class Prestamo extends AuditableBaseEntity {
 
     @Column(unique = true, nullable = false)
     private String idProducto; // identificador unico en el sistema
-    private double montoPrestamo;
-    private double montoApagar;
-    private double montoPagado;
+    private BigDecimal montoPrestamo;
+    private BigDecimal montoApagar;
+    private BigDecimal montoPagado;
 
     @OneToOne
     @JoinColumn(name = "estado_producto_id")
