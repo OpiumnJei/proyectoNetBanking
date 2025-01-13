@@ -17,8 +17,14 @@ public class Prestamo extends AuditableBaseEntity {
 
     @Column(unique = true, nullable = false)
     private String idProducto; // identificador unico en el sistema
+
+    @Column(precision = 18, scale = 2)
     private BigDecimal montoPrestamo;
+
+    @Column(precision = 18, scale = 2)
     private BigDecimal montoApagar;
+
+    @Column(precision = 18, scale = 2)
     private BigDecimal montoPagado;
 
     @OneToOne

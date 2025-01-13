@@ -31,6 +31,6 @@ public record DatosUsuarioDTO(
         this.correo = correo;
         this.password = password;
         this.tipoUsuarioId = tipoUsuarioId;
-        this.montoInicial = montoInicial != null ? montoInicial : BigDecimal.ZERO;
+        this.montoInicial = montoInicial != null ? montoInicial : BigDecimal.ZERO;//ZERO = 0
     }
 }

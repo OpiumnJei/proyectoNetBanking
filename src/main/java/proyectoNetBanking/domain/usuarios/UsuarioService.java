@@ -139,7 +139,7 @@ public class UsuarioService {
         for (CuentaAhorro cuenta : cuentasAhorro) { //Para cada cuenta de ahorro
             if (!cuenta.isEsPrincipal()) {
                 if (BigDecimal.ZERO.compareTo(cuenta.getSaldoDisponible()) != 0) {
-                        cuenta.setSaldoDisponible(BigDecimal.ZERO); //reducir a 0 el saldo de las cuentas NO pricipales para que se refleje la transaccion entre cuentas
+                    cuenta.setSaldoDisponible(BigDecimal.ZERO); //reducir a 0 el saldo de las cuentas NO pricipales para que se refleje la transaccion entre cuentas
                 }
                 cuenta.setEstadoProducto(colocarEstadoProductos(ESTADO_INACTIVO)); // Eliminar logicamente cuentas no principal
             } else {
@@ -159,7 +159,7 @@ public class UsuarioService {
         List<TarjetaCredito> tarjetas = tarjetaRepository.findByUsuarioId(usuario.getId());
 
         for (TarjetaCredito tarjeta : tarjetas) {
-            if (tarjeta.getSaldoPorPagar() > 0) {//si el usuario aun debe saldar
+            if (tarjeta.getSaldoPorPagar().compareTo(BigDecimal.ZERO) > 0) {//si saldo por pagar es mayor que cero
                 throw new RuntimeException("El usuario tiene tarjetas de crédito con saldo pendiente.");
             }
             tarjeta.setEstadoProducto(colocarEstadoProductos(ESTADO_INACTIVO));
@@ -174,7 +174,7 @@ public class UsuarioService {
         List<Prestamo> prestamos = prestamoRepository.findByUsuarioId(usuario.getId());
 
         for (Prestamo prestamo : prestamos) {
-            if (prestamo.getMontoApagar() > 0) { //si el usuario aun debe dinero del prestamo
+            if (prestamo.getMontoApagar().compareTo(BigDecimal.ZERO) > 0) { //si monto a pagar es mayor que cero
                 throw new RuntimeException("El usuario tiene préstamos con saldo pendiente.");
             }
             prestamo.setEstadoProducto(colocarEstadoProductos(ESTADO_INACTIVO));

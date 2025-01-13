@@ -10,8 +10,11 @@ public interface CuentaAhorroRepository extends JpaRepository<CuentaAhorro, Long
     boolean existsByIdProducto(String idProducto);
 
     //verificar si el hay un usuario relacionado a la cuenta de ahorro
-    boolean existsByUsuarioId(Long id);
+//    boolean existsByUsuarioId(Long id);
 
-
+    //trae una lista de cuentas asociadas a idUsuario
     List<CuentaAhorro> findByUsuarioId(Long idUsuario);
+
+    //se hace un conteo de los registros en la tabla de cuentas_ahorro que coincidan con el idUsario
+    int countByUsuarioId(Long idUsuario);
 }

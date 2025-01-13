@@ -7,6 +7,8 @@ import proyectoNetBanking.domain.common.AuditableBaseEntity;
 import proyectoNetBanking.domain.productos.EstadoProducto;
 import proyectoNetBanking.domain.usuarios.Usuario;
 
+import java.math.BigDecimal;
+
 @Entity(name = "cuentaAhorro")
 @Table(name = "cuentas_ahorro")
 @Setter
@@ -15,7 +17,9 @@ public class CuentaAhorro extends AuditableBaseEntity {
 
     @Column(unique = true, nullable = false)
     private String idProducto; // identificador unico en el sistema
-    private double saldoDisponible;
+    //precision = numero total de digitos, scale = cantidad total de numeros luego del punto decimal
+    @Column(precision = 18, scale = 2)
+    private BigDecimal saldoDisponible;
     private boolean esPrincipal = false; //este campo por default es false, ya que toda cuenta creada luego de la creacion de un usuario es secundaria
     private String proposito;
     @OneToOne

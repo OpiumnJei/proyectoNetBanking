@@ -17,8 +17,14 @@ public class TarjetaCredito extends AuditableBaseEntity{
 
     @Column(unique = true, nullable = false)
     private String idProducto; // identificador unico en el sistema
+
+    @Column(precision = 18, scale = 2)
     private BigDecimal limiteCredito;
+
+    @Column(precision = 18, scale = 2)
     private BigDecimal saldoDisponible;
+
+    @Column(precision = 18, scale = 2)
     private BigDecimal saldoPorPagar;
 
     @OneToOne
