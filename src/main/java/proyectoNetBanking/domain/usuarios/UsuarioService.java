@@ -182,14 +182,13 @@ public class UsuarioService {
         }
     }
 
-    //generar id del producto y verificar que no exista un producto con ese id
+    //generar id del producto
     public String generarIdUnicoProducto() {
-        String idGenerado;
-        do {
-            idGenerado = generadorId.generarIdProducto();
-        }
-        while (cuentaRepository.existsByIdProducto(idGenerado)); //validar que el id del producto generado no exista en la bd
-        return idGenerado;
+       /*
+       Esta linea -> return generadorId.generarIdUnicoProducto(id ->cuentaRepository.existsByIdProducto(id));
+       Hace lo mismo que la linea de abajo:
+       *  */
+        return generadorId.generarIdUnicoProducto(cuentaRepository::existsByIdProducto); //se traduce del repositorio toma el metodo existsbyIdProducto como una referencia
     }
 
     public EstadoProducto colocarEstadoProductos(String nombreEstado) {

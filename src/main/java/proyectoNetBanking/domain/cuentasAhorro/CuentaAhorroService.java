@@ -3,6 +3,7 @@ package proyectoNetBanking.domain.cuentasAhorro;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import proyectoNetBanking.domain.common.GeneradorId;
 import proyectoNetBanking.domain.productos.EstadoProducto;
 import proyectoNetBanking.domain.productos.EstadoProductoRepository;
 import proyectoNetBanking.domain.usuarios.Usuario;
@@ -26,11 +27,15 @@ public class CuentaAhorroService {
     private UsuarioRepository usuarioRepository;
 
     @Autowired
+    private GeneradorId generadorId; //inyectamos el generador de ids
+
+    @Autowired
     private EstadoProductoRepository estadoProductoRepository;
+
 
     //crear una cuenta de ahorro
     @Transactional
-    public void CrearCuentaNoPrincipal(DatosCuentasAhorroDTO datosCuentasAhorroDTO) {
+    public void CrearCuentaNoPrincipal(DatosCuentaAhorroDTO datosCuentasAhorroDTO) {
 
         //verificar si el usuario existe
         Usuario usuario = usuarioRepository.findById(datosCuentasAhorroDTO.usuarioId())
@@ -43,6 +48,7 @@ public class CuentaAhorroService {
         }
 
         CuentaAhorro cuentaNoPrincipal = new CuentaAhorro();
+        cuentaNoPrincipal.setIdProducto(generarIdUnicoProducto());
         cuentaNoPrincipal.setUsuario(usuario);
         cuentaNoPrincipal.setSaldoDisponible((datosCuentasAhorroDTO.montoCuenta()));
         cuentaNoPrincipal.setProposito(datosCuentasAhorroDTO.proposito());
@@ -102,7 +108,15 @@ public class CuentaAhorroService {
 //            logger.info("Saldo transferido de la cuenta secundaria a la principal. ID Usuario: {}, ID Cuenta Principal: {}, ID Cuenta Secundaria: {}",
 //                    usuario.getId(), cuentaPrincipal.getId(), cuentaSecundaria.getId());
         }
+
+
     }
 
+    //generar id del producto
+    public String generarIdUnicoProducto() {
+
+        return generadorId.generarIdUnicoProducto(cuentaAhorroRepository::existsByIdProducto); //se traduce del repositorio toma el metodo existsbyIdProducto como una referencia
+    }
 }
+
 
