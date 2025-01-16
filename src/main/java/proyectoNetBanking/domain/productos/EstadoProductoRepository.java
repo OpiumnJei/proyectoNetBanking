@@ -9,5 +9,5 @@ public interface EstadoProductoRepository extends JpaRepository<EstadoProducto, 
     //verificar si el producto existe en la bd
     boolean existsByNombreEstado(String nombre);
 
-    Optional<EstadoProducto> findByNombreEstado(String nombre);
+    Optional<EstadoProducto> findByNombreEstadoIgnoreCase(String nombre);
 }
