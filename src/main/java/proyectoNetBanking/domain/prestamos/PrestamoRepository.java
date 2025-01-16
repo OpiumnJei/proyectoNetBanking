@@ -9,4 +9,6 @@ public interface PrestamoRepository extends JpaRepository<Prestamo, Long> {
     List<Prestamo> findByUsuarioId(Long id);
 
     boolean existsByIdProducto(String idProducto);
+
+    int countByUsuarioIdAndEstadoProducto(Long idUsuario);
 }

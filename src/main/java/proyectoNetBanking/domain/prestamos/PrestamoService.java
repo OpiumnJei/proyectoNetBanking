@@ -6,6 +6,9 @@ import org.springframework.transaction.annotation.Transactional;
 import proyectoNetBanking.domain.common.GeneradorId;
 import proyectoNetBanking.domain.cuentasAhorro.CuentaAhorro;
 import proyectoNetBanking.domain.cuentasAhorro.CuentaAhorroRepository;
+import proyectoNetBanking.domain.productos.EstadoProducto;
+import proyectoNetBanking.domain.productos.EstadoProductoEnum;
+import proyectoNetBanking.domain.productos.EstadoProductoRepository;
 import proyectoNetBanking.domain.usuarios.Usuario;
 import proyectoNetBanking.domain.usuarios.UsuarioRepository;
 import proyectoNetBanking.infra.errors.CuentaNotFoundException;
@@ -18,6 +21,8 @@ public class PrestamoService {
 
     //monto minimo del prestamo
     private final BigDecimal MONTO_MINIMO_PRESTAMO = BigDecimal.valueOf(1000);
+    //cantidad max de prestamos activos que un usuario puede tener
+    private final int CANT_MAX_PRESTAMOS_ACTIVOS = 2;
     @Autowired
     private PrestamoRepository prestamoRepository;
     
@@ -29,6 +34,9 @@ public class PrestamoService {
 
     @Autowired
     private CuentaAhorroRepository cuentaAhorroRepository;
+
+    @Autowired
+    private EstadoProductoRepository estadoProductoRepository;
 
     @Transactional
     public void crearPrestamo(DatosPrestamoDTO datosPrestamoDTO){
@@ -42,20 +50,27 @@ public class PrestamoService {
             throw new RuntimeException("El monto introducido es menor al monto minimo aceptado.");
         }
 
+        //validar que el usuario no tenga mas de dos prestamos activos
+        if(prestamoRepository.countByUsuarioIdAndEstadoProducto(usuario.getId()) >= CANT_MAX_PRESTAMOS_ACTIVOS){
+            throw new RuntimeException("El usuario ya alcanzo el límite de prestamos permitidos");
+        }
+
         //crear instancia de un prestamo
         Prestamo prestamo = new Prestamo();
         prestamo.setIdProducto(generarIdUnicoProducto());
         prestamo.setMontoPrestamo(datosPrestamoDTO.montoPrestamo());
         prestamo.setMontoApagar(datosPrestamoDTO.montoPrestamo());
         prestamo.setMontoPagado(BigDecimal.ZERO);
+        prestamo.setEstadoProducto(colocarEstadoProductos(EstadoProductoEnum.ACTIVO.name()));
         prestamo.setUsuario(usuario);
 
-        trasladarMontoACuentaPrincipal(datosPrestamoDTO.montoPrestamo(), usuario.getId());//se obtienen el monto y el id del usuario
+        //se traslada el dinero a la cuenta principal
+        trasladarMontoACuentaPrincipal(prestamo.getMontoPrestamo(), usuario.getId());
     }
 
     public void trasladarMontoACuentaPrincipal(BigDecimal monto, Long idUsuario){
 
-        //buscar cuenta principa
+        //buscar cuenta principal
         CuentaAhorro cuentaPrincipal = cuentaAhorroRepository.findByUsuarioId(idUsuario)
                 .stream()
                 .filter(CuentaAhorro::isEsPrincipal)
@@ -65,6 +80,13 @@ public class PrestamoService {
         // Transferir monto del prestamo a la cuenta principal
         cuentaPrincipal.setSaldoDisponible(cuentaPrincipal.getSaldoDisponible().add(monto));
 
+    }
+
+    //metodo encargado de la gestion de estados
+    public EstadoProducto colocarEstadoProductos(String nombreEstado) {
+
+        return estadoProductoRepository.findByNombreEstadoIgnoreCase(nombreEstado)
+                .orElseThrow(() -> new RuntimeException("El estado no existe"));
     }
 
 
