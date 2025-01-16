@@ -20,5 +20,5 @@ public interface CuentaAhorroRepository extends JpaRepository<CuentaAhorro, Long
     List<CuentaAhorro> findByUsuarioId(Long idUsuario);
 
     //se hace un conteo de los registros en la tabla de cuentas_ahorro que coincidan con el idUsario
-    int countByUsuarioId(Long idUsuario);
+    int  countByUsuarioId(Long idUsuario);
 }

@@ -11,6 +11,7 @@ import proyectoNetBanking.domain.cuentasAhorro.CuentaAhorroRepository;
 import proyectoNetBanking.domain.prestamos.Prestamo;
 import proyectoNetBanking.domain.prestamos.PrestamoRepository;
 import proyectoNetBanking.domain.productos.EstadoProducto;
+import proyectoNetBanking.domain.productos.EstadoProductoEnum;
 import proyectoNetBanking.domain.productos.EstadoProductoRepository;
 import proyectoNetBanking.domain.tarjetasCredito.TarjetaCredito;
 import proyectoNetBanking.domain.tarjetasCredito.TarjetaRepository;
@@ -46,10 +47,6 @@ public class UsuarioService {
 
     @Autowired
     private EstadoProductoRepository estadoProductoRepository;
-
-    //Estados que puede manejar una cuenta
-    private static final String ESTADO_INACTIVO = "Inactivo";
-    private static final String ESTADO_ACTIVO = "Activo";
 
     //crear un cliente
     public void crearCliente(DatosUsuarioDTO datosUsuariosDTO) {
@@ -90,7 +87,7 @@ public class UsuarioService {
         cuentaUsuarioPrincipal.setEsPrincipal(true);
         cuentaUsuarioPrincipal.setProposito("Fondo de emergencia");
         cuentaUsuarioPrincipal.setSaldoDisponible(usuario.getMontoInicial());
-        cuentaUsuarioPrincipal.setEstadoProducto(colocarEstadoProductos(ESTADO_ACTIVO));
+        cuentaUsuarioPrincipal.setEstadoProducto(colocarEstadoProductos(EstadoProductoEnum.ACTIVO.name()));
 
         //guardar la cuenta
         cuentaRepository.save(cuentaUsuarioPrincipal);
@@ -141,12 +138,12 @@ public class UsuarioService {
                 if (BigDecimal.ZERO.compareTo(cuenta.getSaldoDisponible()) != 0) {
                     cuenta.setSaldoDisponible(BigDecimal.ZERO); //reducir a 0 el saldo de las cuentas NO pricipales para que se refleje la transaccion entre cuentas
                 }
-                cuenta.setEstadoProducto(colocarEstadoProductos(ESTADO_INACTIVO)); // Eliminar logicamente cuentas no principal
+                cuenta.setEstadoProducto(colocarEstadoProductos(EstadoProductoEnum.INACTIVO.name())); // Eliminar logicamente cuentas no principal
             } else {
                 // Transferir saldo acumulado a la cuenta principal
                 // como ambos metodos estan referenciados por atributos BigDecimal podemos usar el metodo add
                 cuenta.setSaldoDisponible(cuenta.getSaldoDisponible().add(saldoCuentasNoPrincipales));
-                cuenta.setEstadoProducto(colocarEstadoProductos(ESTADO_INACTIVO)); // Inactivar cuenta principal
+                cuenta.setEstadoProducto(colocarEstadoProductos(EstadoProductoEnum.INACTIVO.name())); // Inactivar cuenta principal
                 cuentaRepository.save(cuenta);
             }
         }
@@ -162,7 +159,7 @@ public class UsuarioService {
             if (tarjeta.getSaldoPorPagar().compareTo(BigDecimal.ZERO) > 0) {//si saldo por pagar es mayor que cero
                 throw new RuntimeException("El usuario tiene tarjetas de crédito con saldo pendiente.");
             }
-            tarjeta.setEstadoProducto(colocarEstadoProductos(ESTADO_INACTIVO));
+            tarjeta.setEstadoProducto(colocarEstadoProductos(EstadoProductoEnum.INACTIVO.name()));
             tarjetaRepository.save(tarjeta);
         }
     }
@@ -177,7 +174,7 @@ public class UsuarioService {
             if (prestamo.getMontoApagar().compareTo(BigDecimal.ZERO) > 0) { //si monto a pagar es mayor que cero
                 throw new RuntimeException("El usuario tiene préstamos con saldo pendiente.");
             }
-            prestamo.setEstadoProducto(colocarEstadoProductos(ESTADO_INACTIVO));
+            prestamo.setEstadoProducto(colocarEstadoProductos(EstadoProductoEnum.INACTIVO.name()));
             prestamoRepository.save(prestamo);
         }
     }
@@ -193,7 +190,7 @@ public class UsuarioService {
 
     public EstadoProducto colocarEstadoProductos(String nombreEstado) {
 
-        return estadoProductoRepository.findByNombreEstado(nombreEstado)
+        return estadoProductoRepository.findByNombreEstadoIgnoreCase(nombreEstado)
                 .orElseThrow(() -> new RuntimeException("El estado no existe"));
     }
 }

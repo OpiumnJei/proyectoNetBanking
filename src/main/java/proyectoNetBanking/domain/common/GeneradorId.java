@@ -18,6 +18,13 @@ public class GeneradorId{
         return String.valueOf(100_000_000 + new SecureRandom().nextInt(900_000_000));
     }
 
+    /*
+    * Para comprobar que el id del producto no exista en la base datos se usa
+    * una interfaz funcional (Predicate<String>) que recibe un parametro del tipo String y retorna
+    * un booleano.
+    *
+    * */
+
     //generar id del producto y verificar que no exista un producto con ese id
     public String generarIdUnicoProducto(Predicate<String> verificarId) {
         String idGenerado;

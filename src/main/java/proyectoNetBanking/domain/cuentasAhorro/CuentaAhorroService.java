@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import proyectoNetBanking.domain.common.GeneradorId;
 import proyectoNetBanking.domain.productos.EstadoProducto;
+import proyectoNetBanking.domain.productos.EstadoProductoEnum;
 import proyectoNetBanking.domain.productos.EstadoProductoRepository;
 import proyectoNetBanking.domain.usuarios.Usuario;
 import proyectoNetBanking.domain.usuarios.UsuarioRepository;
@@ -15,10 +16,6 @@ import java.math.BigDecimal;
 
 @Service
 public class CuentaAhorroService {
-
-    //constante que almacenan estados en los que se puede encontrar una cuenta
-    private static final String ESTADO_INACTIVO = "Inactivo";
-    private static final String ESTADO_ACTIVO = "Activo";
 
     @Autowired
     private CuentaAhorroRepository cuentaAhorroRepository;
@@ -52,14 +49,14 @@ public class CuentaAhorroService {
         cuentaNoPrincipal.setUsuario(usuario);
         cuentaNoPrincipal.setSaldoDisponible((datosCuentasAhorroDTO.montoCuenta()));
         cuentaNoPrincipal.setProposito(datosCuentasAhorroDTO.proposito());
-        cuentaNoPrincipal.setEstadoProducto(colocarEstadoProductos(ESTADO_ACTIVO));
+        cuentaNoPrincipal.setEstadoProducto(colocarEstadoProductos(EstadoProductoEnum.ACTIVO.name()));
         cuentaAhorroRepository.save(cuentaNoPrincipal);
     }
 
     //metodo encargado de la gestion de estados
     public EstadoProducto colocarEstadoProductos(String nombreEstado) {
 
-        return estadoProductoRepository.findByNombreEstado(nombreEstado)
+        return estadoProductoRepository.findByNombreEstadoIgnoreCase(nombreEstado)
                 .orElseThrow(() -> new RuntimeException("El estado no existe"));
     }
 
@@ -86,10 +83,11 @@ public class CuentaAhorroService {
 
         //Se usa compareTo para la comprobar que el saldo de la cuenta sea cero
         if (BigDecimal.ZERO.compareTo(cuentaSecundaria.getSaldoDisponible()) == 0) { // Si el saldo de la cuenta secundaria es cero
-            cuentaSecundaria.setEstadoProducto(colocarEstadoProductos(ESTADO_INACTIVO)); // Eliminación lógica directa
+            cuentaSecundaria.setEstadoProducto(colocarEstadoProductos(EstadoProductoEnum.INACTIVO.name())); // Eliminación lógica directa
             cuentaAhorroRepository.save(cuentaSecundaria);
         } else {
-            // Transferir saldo a la cuenta principal
+
+            // encontrar la cuenta principal del usuario
             CuentaAhorro cuentaPrincipal = cuentaAhorroRepository.findByUsuarioId(usuario.getId()).stream()
                     .filter(CuentaAhorro::isEsPrincipal)
                     .findFirst()//extrae el primer registro en donde esPrincipal = true
@@ -101,14 +99,13 @@ public class CuentaAhorroService {
             cuentaAhorroRepository.save(cuentaPrincipal);//luego se guardan los cambios efectuados en esa cuenta
 
             cuentaSecundaria.setSaldoDisponible(BigDecimal.ZERO); //hacer 0 el saldo para que cobre mas sentido la transferencia entre cuentas
-            cuentaSecundaria.setEstadoProducto(colocarEstadoProductos(ESTADO_INACTIVO)); // Inactivar la cuenta secundaria
+            cuentaSecundaria.setEstadoProducto(colocarEstadoProductos(EstadoProductoEnum.INACTIVO.name())); // Inactivar la cuenta secundaria
             cuentaAhorroRepository.save(cuentaSecundaria);
 
 //            // Registrar operación
 //            logger.info("Saldo transferido de la cuenta secundaria a la principal. ID Usuario: {}, ID Cuenta Principal: {}, ID Cuenta Secundaria: {}",
 //                    usuario.getId(), cuentaPrincipal.getId(), cuentaSecundaria.getId());
         }
-
 
     }
 
