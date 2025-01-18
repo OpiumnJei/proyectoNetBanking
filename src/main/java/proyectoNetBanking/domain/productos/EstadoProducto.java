@@ -10,6 +10,6 @@ import proyectoNetBanking.domain.common.AuditableBaseEntity;
 @Setter
 public class EstadoProducto extends AuditableBaseEntity {
 
-    // Ejemplo: "Activo", "Inactivo", "Bloqueado"
+    // Ejemplo: "Activo", "Inactivo", "Bloqueado", "Saldado"
     private String nombreEstado;
 }
