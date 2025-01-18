@@ -10,5 +10,6 @@ public interface PrestamoRepository extends JpaRepository<Prestamo, Long> {
 
     boolean existsByIdProducto(String idProducto);
 
-    int countByUsuarioIdAndEstadoProducto(Long idUsuario);
+    //se hace un conteo en la bd de los prestamos activos, es decir que sean igual a 1
+    int countByEstadoProductoId(Long idEstado);
 }
