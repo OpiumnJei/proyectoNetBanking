@@ -49,6 +49,7 @@ public class DataInitializer implements CommandLineRunner {
         guardarEstadoProducto("Activo");
         guardarEstadoProducto("Inactivo");
         guardarEstadoProducto("Bloqueado");
+        guardarEstadoProducto("Saldado");
     }
 
     //metodo para guarda/verificar si existen esos tipos de usuarios en la bd
