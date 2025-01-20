@@ -16,6 +16,7 @@ import proyectoNetBanking.domain.productos.EstadoProductoRepository;
 import proyectoNetBanking.domain.tarjetasCredito.TarjetaCredito;
 import proyectoNetBanking.domain.tarjetasCredito.TarjetaRepository;
 import proyectoNetBanking.infra.errors.DuplicatedItemsException;
+import proyectoNetBanking.infra.errors.TypeUserNotFoundException;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -61,7 +62,7 @@ public class UsuarioService {
 
         // Recuperar el TipoUsuario desde la base de datos
         TipoUsuario tipoUsuarioEntity = tipoUsuarioRepository.findById(datosUsuariosDTO.tipoUsuarioId())
-                .orElseThrow(() -> new RuntimeException("Tipo de usuario no encontrado"));
+                .orElseThrow(() -> new TypeUserNotFoundException("Tipo de usuario no encontrado"));
 
         //crear instancia de usuario
         Usuario usuario = new Usuario();
@@ -73,9 +74,13 @@ public class UsuarioService {
         usuario.setTipoUsuario(tipoUsuarioEntity);
         usuario.setMontoInicial(datosUsuariosDTO.montoInicial());
 
-        usuarioRepository.save(usuario);
+        /* usuarioGuardado contiene el id generado por JPA
+        * Los frameworks como JPA generan automáticamente el ID para las entidades persistidas,
+        *  y este ID estará presente en el objeto retornado por save.
+        * */
+        Usuario usuarioGuardado = usuarioRepository.save(usuario);
 
-        asignarCuentaPrincipal(usuario);//colocarle cuenta principal por motivos de logica de negocio
+        asignarCuentaPrincipal(usuarioGuardado);//colocarle cuenta principal por motivos de logica de negocio
     }
 
     //asignar cuenta de ahorro principal al usuario

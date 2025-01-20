@@ -1,8 +1,7 @@
 package proyectoNetBanking.domain.cuentasAhorro;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import proyectoNetBanking.domain.common.AuditableBaseEntity;
 import proyectoNetBanking.domain.productos.EstadoProducto;
 import proyectoNetBanking.domain.usuarios.Usuario;
@@ -13,6 +12,9 @@ import java.math.BigDecimal;
 @Table(name = "cuentas_ahorro")
 @Setter
 @Getter
+@AllArgsConstructor
+@NoArgsConstructor
+@EqualsAndHashCode(of = "id")
 public class CuentaAhorro extends AuditableBaseEntity {
 
     @Column(unique = true, nullable = false)

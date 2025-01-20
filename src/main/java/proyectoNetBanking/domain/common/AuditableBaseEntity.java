@@ -19,7 +19,7 @@ public abstract class AuditableBaseEntity {
 
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
-        private Long id;
+        private Long id; //clave primaria de la entidad
 
         @CreatedBy//anotacion de auditoria de jpa
         @Column(name = "created_by", updatable = false)

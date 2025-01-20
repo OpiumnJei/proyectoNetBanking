@@ -1,4 +1,4 @@
-package proyectoNetBanking.infra.AuditConfig;
+package proyectoNetBanking.infra.auditConfig;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.domain.AuditorAware;
