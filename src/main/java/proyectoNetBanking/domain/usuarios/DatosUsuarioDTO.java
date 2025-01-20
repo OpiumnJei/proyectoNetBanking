@@ -16,6 +16,7 @@ public record DatosUsuarioDTO(
         @Email(message = "El correo electronico es obligatorio")
         String correo,
         @NotBlank
+                @Size(min = 5, message = "La contraseña debe tener al menos 5 caracteres.")
         String password,
         @NotNull
         Long tipoUsuarioId,
