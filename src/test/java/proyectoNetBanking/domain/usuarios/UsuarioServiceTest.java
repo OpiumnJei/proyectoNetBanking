@@ -171,7 +171,7 @@ class UsuarioServiceTest {
     }
 
     @Test
-    @DisplayName("Cuando se intenta registrar un usuario con un correo ya existente en el sistema, se lanza una exception del tipo DuplicatedItemsException.")
+    @DisplayName("Cuando se intenta registrar un usuario con un nuevoCorreo ya existente en el sistema, se lanza una exception del tipo DuplicatedItemsException.")
     void deberiaLanzarExcepcioCuandoCorreoYaExiste() {
 
         String correoExistente = "jerlinson@gmail.com";
@@ -186,7 +186,7 @@ class UsuarioServiceTest {
                 BigDecimal.valueOf(1000) // montoInicial
         );
 
-        //emular que el correo ya esta registrado
+        //emular que el nuevoCorreo ya esta registrado
         Mockito.when(usuarioRepository.existsByCorreo(datosUsuarioDTO.correo())).thenReturn(true);
 
         //verificacion y asercion
@@ -195,7 +195,7 @@ class UsuarioServiceTest {
                 () -> usuarioService.crearCliente(datosUsuarioDTO) //dentro de usuario service y el metodo crearCliente
         );
 
-        Assertions.assertEquals("El correo ya se encuentra registrado en el sistema.", exception.getMessage());
+        Assertions.assertEquals("El nuevoCorreo ya se encuentra registrado en el sistema.", exception.getMessage());
 
         System.out.print(exception.getMessage());
         //comprobar que no se hayan guardado los datos del usuario si se lanza y captura la excepcionn

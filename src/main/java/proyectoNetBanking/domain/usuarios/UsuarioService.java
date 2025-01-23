@@ -15,8 +15,10 @@ import proyectoNetBanking.domain.productos.EstadoProductoEnum;
 import proyectoNetBanking.domain.productos.EstadoProductoRepository;
 import proyectoNetBanking.domain.tarjetasCredito.TarjetaCredito;
 import proyectoNetBanking.domain.tarjetasCredito.TarjetaRepository;
+import proyectoNetBanking.infra.errors.CuentaNotFoundException;
 import proyectoNetBanking.infra.errors.DuplicatedItemsException;
 import proyectoNetBanking.infra.errors.TypeUserNotFoundException;
+import proyectoNetBanking.infra.errors.UsuarioNotFoundException;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -53,12 +55,12 @@ public class UsuarioService {
     //crear un cliente
     public void crearCliente(DatosUsuarioDTO datosUsuariosDTO) {
 
-        //se valida que tanto la cedula y el correo no esten previamente registrados en la bd
+        //se valida que tanto la cedula y el nuevoCorreo no esten previamente registrados en la bd
         if (usuarioRepository.existsByCedula(datosUsuariosDTO.cedula())) {
             throw new DuplicatedItemsException("La cédula ya se encuentra registrada en el sistema.");
         }
         if (usuarioRepository.existsByCorreo(datosUsuariosDTO.correo())) {
-            throw new DuplicatedItemsException("El correo ya se encuentra registrado en el sistema.");
+            throw new DuplicatedItemsException("El nuevoCorreo ya se encuentra registrado en el sistema.");
         }
 
         // Recuperar el TipoUsuario desde la base de datos
@@ -184,6 +186,38 @@ public class UsuarioService {
             prestamo.setEstadoProducto(colocarEstadoProductos(EstadoProductoEnum.INACTIVO.name()));
             prestamoRepository.save(prestamo);
         }
+    }
+
+    //metodo para actualizar los datos de un cliente
+    public void actualizarDatosCliente(Long usuarioId, ActualizarDatosUsuarioDTO datosUsuarioDTO){
+        //verificar que el usuario exista
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new UsuarioNotFoundException("Usuario no encontrado"));
+
+        // Verificar si el usuario está inactivo
+        if (!usuario.isActivo()) {
+            throw new IllegalStateException("El usuario se encuentra inactivo.");
+        }
+
+        usuario.setNombre(datosUsuarioDTO.nuevoNombre());
+        usuario.setApellido(datosUsuarioDTO.nuevoApellido());
+        usuario.setPassword(passwordEncoder.encode(datosUsuarioDTO.newPassword()));
+        usuario.setCorreo(datosUsuarioDTO.nuevoCorreo());
+        usuario.setCedula(datosUsuarioDTO.nuevaCedula());
+
+        //sumar monto adicional a la cuenta principal del usuario
+
+        //buscar cuenta principal
+        CuentaAhorro cuentaPrincipal = cuentaRepository.findByUsuarioId(usuarioId)
+                .stream()
+                .filter(CuentaAhorro::isEsPrincipal)
+                .findFirst()//extrae el primer registro en donde esPrincipal = true
+                .orElseThrow(() -> new CuentaNotFoundException("No se encontró una cuenta principal para este usuario"));
+
+        //se suma el monto adicional a esa cuenta
+        cuentaPrincipal.setSaldoDisponible(cuentaPrincipal.getSaldoDisponible().add(datosUsuarioDTO.montoAdicinal()));
+
+        cuentaRepository.save(cuentaPrincipal);
     }
 
     //generar id del producto
