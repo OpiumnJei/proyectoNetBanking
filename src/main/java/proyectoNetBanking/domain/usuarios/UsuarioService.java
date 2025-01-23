@@ -1,6 +1,7 @@
 package proyectoNetBanking.domain.usuarios;
 
 
+import jakarta.validation.constraints.DecimalMin;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -78,9 +79,9 @@ public class UsuarioService {
         usuario.setMontoInicial(datosUsuariosDTO.montoInicial());
 
         /* usuarioGuardado contiene el id generado por JPA
-        * Los frameworks como JPA generan automáticamente el ID para las entidades persistidas,
-        *  y este ID estará presente en el objeto retornado por save.
-        * */
+         * Los frameworks como JPA generan automáticamente el ID para las entidades persistidas,
+         *  y este ID estará presente en el objeto retornado por save.
+         * */
         Usuario usuarioGuardado = usuarioRepository.save(usuario);
 
         asignarCuentaPrincipal(usuarioGuardado);//colocarle cuenta principal por motivos de logica de negocio
@@ -118,7 +119,7 @@ public class UsuarioService {
 
         //luego de verificarse de que el usuario no tenga productos con deudas, se inactiva
         usuario.setActivo(false);
-       Usuario usuarioInactivo = usuarioRepository.save(usuario);
+        Usuario usuarioInactivo = usuarioRepository.save(usuario);
     }
 
     //inactivar todos los productos
@@ -189,7 +190,7 @@ public class UsuarioService {
     }
 
     //metodo para actualizar los datos de un cliente
-    public void actualizarDatosCliente(Long usuarioId, ActualizarDatosUsuarioDTO datosUsuarioDTO){
+    public void actualizarDatosUsuario(Long usuarioId, ActualizarDatosUsuarioDTO datosUsuarioDTO) {
         //verificar que el usuario exista
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new UsuarioNotFoundException("Usuario no encontrado"));
@@ -199,25 +200,38 @@ public class UsuarioService {
             throw new IllegalStateException("El usuario se encuentra inactivo.");
         }
 
-        usuario.setNombre(datosUsuarioDTO.nuevoNombre());
-        usuario.setApellido(datosUsuarioDTO.nuevoApellido());
-        usuario.setPassword(passwordEncoder.encode(datosUsuarioDTO.newPassword()));
-        usuario.setCorreo(datosUsuarioDTO.nuevoCorreo());
-        usuario.setCedula(datosUsuarioDTO.nuevaCedula());
+        actualizarDatos(usuario, datosUsuarioDTO); //se actualizan los datos del usuario
+        CuentaAhorro cuentaAhorro = obtenerCuentaPrincipal(usuarioId); //se busca la cuenta principal del usuario
+        actualizarSaldoCuentaPrincipal(cuentaAhorro, datosUsuarioDTO.montoAdicinal()); //se actualiza el saldo de la cuenta asociada al usuario
 
-        //sumar monto adicional a la cuenta principal del usuario
 
-        //buscar cuenta principal
+    }
+
+    private void actualizarSaldoCuentaPrincipal(CuentaAhorro cuentaAhorro, BigDecimal montoAdicional) {
+        cuentaAhorro.setSaldoDisponible(cuentaAhorro.getSaldoDisponible().add(montoAdicional));
+        cuentaRepository.save(cuentaAhorro);
+    }
+
+    //metodo para obtener la cuenta principal del usuario
+    private CuentaAhorro obtenerCuentaPrincipal(Long usuarioId) {
         CuentaAhorro cuentaPrincipal = cuentaRepository.findByUsuarioId(usuarioId)
                 .stream()
                 .filter(CuentaAhorro::isEsPrincipal)
                 .findFirst()//extrae el primer registro en donde esPrincipal = true
                 .orElseThrow(() -> new CuentaNotFoundException("No se encontró una cuenta principal para este usuario"));
 
-        //se suma el monto adicional a esa cuenta
-        cuentaPrincipal.setSaldoDisponible(cuentaPrincipal.getSaldoDisponible().add(datosUsuarioDTO.montoAdicinal()));
+        //retornar la cuenta principal
+        return cuentaPrincipal;
+    }
 
-        cuentaRepository.save(cuentaPrincipal);
+    //metodo auxiliar para actualizar datos
+    private void actualizarDatos(Usuario usuario, ActualizarDatosUsuarioDTO datosUsuarioDTO) {
+
+        usuario.setNombre(datosUsuarioDTO.nuevoNombre());
+        usuario.setApellido(datosUsuarioDTO.nuevoApellido());
+        usuario.setPassword(passwordEncoder.encode(datosUsuarioDTO.newPassword()));
+        usuario.setCorreo(datosUsuarioDTO.nuevoCorreo());
+        usuario.setCedula(datosUsuarioDTO.nuevaCedula());
     }
 
     //generar id del producto

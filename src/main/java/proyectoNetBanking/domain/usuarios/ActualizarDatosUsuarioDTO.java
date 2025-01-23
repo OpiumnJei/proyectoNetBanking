@@ -1,9 +1,6 @@
 package proyectoNetBanking.domain.usuarios;
 
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
 
@@ -13,7 +10,7 @@ public record ActualizarDatosUsuarioDTO(
         @NotBlank
         String nuevoApellido,
         @NotBlank
-                @Size(max = 11, message = "La cedula no debe contener mas de 11 caracteres")
+        @Pattern(regexp = "\\d{11}", message = "La cédula debe contener exactamente 11 dígitos numéricos.") //usamos una expresion regular para controlar la cantidad de digitos de la cedula
         String nuevaCedula,
         @NotBlank
         @Email(message = "El nuevoCorreo electronico es obligatorio")
