@@ -11,6 +11,7 @@ public record DatosUsuarioDTO(
         @NotBlank
         String apellido,
         @NotBlank
+        @Size(max = 11, message = "La cedula no debe contener mas de 11 caracteres")
         String cedula,
         @NotBlank
         @Email(message = "El correo electronico es obligatorio")
