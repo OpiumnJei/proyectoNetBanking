@@ -1,6 +1,7 @@
 package proyectoNetBanking.domain.usuarios;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -10,19 +11,25 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import proyectoNetBanking.domain.common.GeneradorId;
 import proyectoNetBanking.domain.cuentasAhorro.CuentaAhorro;
 import proyectoNetBanking.domain.cuentasAhorro.CuentaAhorroRepository;
+import proyectoNetBanking.domain.prestamos.Prestamo;
+import proyectoNetBanking.domain.prestamos.PrestamoRepository;
 import proyectoNetBanking.domain.productos.EstadoProducto;
 import proyectoNetBanking.domain.productos.EstadoProductoRepository;
+import proyectoNetBanking.domain.tarjetasCredito.TarjetaCredito;
+import proyectoNetBanking.domain.tarjetasCredito.TarjetaRepository;
 import proyectoNetBanking.infra.errors.DuplicatedItemsException;
 import proyectoNetBanking.infra.errors.TypeUserNotFoundException;
 
 import java.math.BigDecimal;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)//Permite usar Mockito en las pruebas y asegura que las dependencias simuladas funcionen correctamente
 class UsuarioServiceTest {
-
+    //Stubbing es la modificacion del comportamiento de un metodo
     //Un Mock es un objeto simulado
     //con @Mock se simulan las dependencias del servicio que queremos testar
     @Mock
@@ -42,6 +49,13 @@ class UsuarioServiceTest {
 
     @Mock
     private EstadoProductoRepository estadoProductoRepository;
+
+    @Mock
+    private PrestamoRepository prestamoRepository;
+
+    @Mock
+    private TarjetaRepository tarjetaRepository;
+
 
     @Captor //es una anotación de Mockito que simplifica la creación de un ArgumentCaptor
     // se utiliza para capturar y analizar los valores reales que se pasan a un mock en tiempo de ejecución
@@ -96,17 +110,19 @@ class UsuarioServiceTest {
         usuarioService.crearCliente(datosUsuario);
 
         // Assert: Capturar y validar la cuenta guardada
-        Mockito.verify(cuentaRepository).save(cuentaCaptor.capture());
-        CuentaAhorro cuentaGuardada = cuentaCaptor.getValue();
+        Mockito.verify(cuentaRepository).save(cuentaCaptor.capture()); //captura los datos de la cuenta recien creada
+        CuentaAhorro cuentaGuardada = cuentaCaptor.getValue();//almacena los datos extraidos por el cuentaCaptor
 
-        // verifica que los atributos específicos coincidan.
+        // verifica que los valores tantos de usuario y la cuenta de ahorro creada sean iguales
         assertEquals(usuarioCreado.getId(), cuentaGuardada.getUsuario().getId());
+        System.out.println(usuarioCreado.getId() + " y " + cuentaGuardada.getUsuario().getId()); //
         assertEquals(usuarioCreado.getNombre(), cuentaGuardada.getUsuario().getNombre());
         assertEquals(usuarioCreado.getApellido(), cuentaGuardada.getUsuario().getApellido());
         assertEquals(usuarioCreado.getCorreo(), cuentaGuardada.getUsuario().getCorreo());
         assertEquals(usuarioCreado.getPassword(), cuentaGuardada.getUsuario().getPassword());
         assertEquals(usuarioCreado.getCedula(), cuentaGuardada.getUsuario().getCedula());
         assertTrue(cuentaGuardada.isEsPrincipal());
+        System.out.println(cuentaGuardada.isEsPrincipal());
         assertEquals(BigDecimal.valueOf(1000), cuentaGuardada.getSaldoDisponible());
         assertEquals("Fondo de emergencia", cuentaGuardada.getProposito());
         assertEquals("ABC123456", cuentaGuardada.getIdProducto());
@@ -156,7 +172,7 @@ class UsuarioServiceTest {
 
     @Test
     @DisplayName("Cuando se intenta registrar un usuario con un correo ya existente en el sistema, se lanza una exception del tipo DuplicatedItemsException.")
-    void deberiaLanzarExcepcioCuandoCorreoYaExiste(){
+    void deberiaLanzarExcepcioCuandoCorreoYaExiste() {
 
         String correoExistente = "jerlinson@gmail.com";
 
@@ -188,7 +204,7 @@ class UsuarioServiceTest {
 
     @Test
     @DisplayName("Debe retornar una excepcion si el tipo de usuario introducido no existe")
-    void deberiaRetornarUnaExcepcionSiTipoUsuarioNoExiste(){
+    void deberiaRetornarUnaExcepcionSiTipoUsuarioNoExiste() {
 
         Long tipoUsuario = 3L;
 
@@ -210,9 +226,138 @@ class UsuarioServiceTest {
                 () -> usuarioService.crearCliente(datosUsuario)
         );
 
-        Assertions.assertEquals("Tipo de usuario no encontrado",exception.getMessage());
+        Assertions.assertEquals("Tipo de usuario no encontrado", exception.getMessage());
         System.out.println(exception.getMessage());
 
         Mockito.verify(usuarioRepository, Mockito.never()).save(Mockito.any(Usuario.class));
+    }
+
+    @Test
+    @DisplayName("Debe inactivar un usuario sin productos pendientes correctamente")
+    void deberiaInactivarUsuarioSinProductosPendientes() {
+        // Datos de prueba
+        Long usuarioId = 1L;
+        Usuario usuario = crearUsuarioConProductos(1l, true);
+
+        // Mockear comportamiento de repositorios
+        Mockito.when(usuarioRepository.findById(usuario.getId())).thenReturn(Optional.of(usuario));
+        //El mock de save devuelva el mismo objeto Usuario que se pasó como argumento en el metodo de arriba, lo que asegura que el objeto mockeado se haya guardado correctamente
+        Mockito.when(usuarioRepository.save(Mockito.any(Usuario.class))).thenAnswer(invocation -> invocation.getArgument(0)); // Save devuelve el mismo usuario
+        Mockito.when(cuentaRepository.findByUsuarioId(usuarioId)).thenReturn(Collections.emptyList());
+        Mockito.when(tarjetaRepository.findByUsuarioId(usuarioId)).thenReturn(Collections.emptyList());
+        Mockito.when(prestamoRepository.findByUsuarioId(usuarioId)).thenReturn(Collections.emptyList());
+
+        // Ejecutar el metodo a probar
+        usuarioService.inactivarUsuario(usuarioId);
+
+        /*
+        codigo que verifica si un usuario se encuentra inactivo
+            IllegalStateException exception = Assertions.assertThrows(
+                IllegalStateException.class,
+                () -> usuarioService.inactivarUsuario(usuario.getId())
+        );
+
+        Assertions.assertEquals("El usuario ya se encuentra inactivo.", exception.getMessage());
+        System.out.println(exception.getMessage());
+        */
+
+        // Verificar que el usuario este inactivo
+        Assertions.assertFalse(usuario.isActivo(), "El usuario debería estar inactivo."); //mensaje a mostrar en caso de que la asercion no se cumpla
+        System.out.println(usuario.isActivo()); //verificar el estado del usuario
+
+        // Verificar interacciones con los repositorios
+        Mockito.verify(usuarioRepository).save(usuario);
+        Mockito.verify(cuentaRepository).findByUsuarioId(usuarioId);
+        Mockito.verify(tarjetaRepository).findByUsuarioId(usuarioId);
+        Mockito.verify(prestamoRepository).findByUsuarioId(usuarioId);
+    }
+
+    @Test
+    @DisplayName("Al intentar inactivar una tarjeta de credito con un monto por pagar deberia retornar una excepcion.")
+    void deberiaLanzarUnaExcepcionAlInactivarUsuarioConTarjetaPorPagar() {
+        // Datos de prueba
+        Long usuarioId = 1L;
+        Usuario usuario = crearUsuarioConProductos(1l, true);
+
+        EstadoProducto estadoActivo = new EstadoProducto("Activo");
+
+        // Mockear comportamiento de repositorios
+        Mockito.when(usuarioRepository.findById(usuario.getId())).thenReturn(Optional.of(usuario));
+
+        // Mockear cuentas de ahorro sin saldo pendiente
+        Mockito.when(cuentaRepository.findByUsuarioId(usuarioId)).thenReturn(Collections.emptyList());
+
+        // Mockear tarjetas de crédito con saldo pendiente
+        List<TarjetaCredito> tarjetasConSaldo = List.of(
+                new TarjetaCredito("abc102002", BigDecimal.valueOf(5000), BigDecimal.valueOf(2500), BigDecimal.valueOf(2500), estadoActivo, usuario), // Tarjeta con  2500 de sald opendiente
+                new TarjetaCredito("abc102320", BigDecimal.valueOf(4000), BigDecimal.valueOf(4000), BigDecimal.ZERO, estadoActivo, usuario)          // Tarjeta sin saldo pendiente
+        );
+
+        Mockito.when(tarjetaRepository.findByUsuarioId(usuarioId)).thenReturn(tarjetasConSaldo);
+
+        //capturar la excepcion generada por el mock
+        RuntimeException exception = Assertions.assertThrows(
+                RuntimeException.class,
+                () -> usuarioService.inactivarUsuario(usuario.getId())
+        );
+
+        //verificar que el mensaje esperado, sea el mismo retornado en la excepcion
+        Assertions.assertEquals("El usuario tiene tarjetas de crédito con saldo pendiente.", exception.getMessage());
+        System.out.println("Excepcion lanzada: " + exception.getMessage());
+
+        // Verificar interacciones
+        Mockito.verify(tarjetaRepository).findByUsuarioId(usuarioId);
+        Mockito.verify(usuarioRepository, Mockito.never()).save(Mockito.any(Usuario.class));
+    }
+
+    @Test
+    @DisplayName("Al intentar inactivar un prestamo con un monto por pagar deberia retornar una excepcion.")
+    void deberiaLanzarExcepcionAlInacitvarUsuarioPrestamoPorPagar(){
+
+        Long usuarioId = 1L;
+        Usuario usuario = crearUsuarioConProductos(usuarioId, true);
+
+        EstadoProducto estadoActivo = new EstadoProducto("Activo");
+
+
+        // Mockear comportamiento de repositorios
+        Mockito.when(usuarioRepository.findById(usuario.getId())).thenReturn(Optional.of(usuario));
+
+        // Mockear cuentas de ahorro sin saldo pendiente
+        Mockito.when(cuentaRepository.findByUsuarioId(usuario.getId())).thenReturn(Collections.emptyList());
+
+        // Mockear prestamos con saldo pendiente
+        List<Prestamo> prestamoConSaldo = List.of(
+                new Prestamo("abc102020", BigDecimal.valueOf(20000), BigDecimal.valueOf(15000), BigDecimal.valueOf(5000), estadoActivo, usuario)// Préstamo 15000 de saldo pendiente
+//                new Prestamo("abc102021", BigDecimal.valueOf(20000), BigDecimal.ZERO, BigDecimal.valueOf(20000), estadoActivo, usuario) // Préstamo sin saldo pendiente
+        );
+
+        Mockito.when(prestamoRepository.findByUsuarioId(usuario.getId())).thenReturn(prestamoConSaldo); //retornar los prestamos que tenga el usario
+
+        RuntimeException exception = Assertions.assertThrows(
+                RuntimeException.class,
+                () -> usuarioService.inactivarUsuario(usuario.getId())
+        );
+
+        //verificar que el mensaje esperado, sea el mismo retornado en la excepcion
+        Assertions.assertEquals("El usuario tiene préstamos con saldo pendiente.", exception.getMessage());
+        System.out.println("Excepcion lanzada: " + exception.getMessage());
+
+
+        //comprobar que el usuario aun permanece activo
+        Assertions.assertTrue(usuario.isActivo());
+        System.out.println("Estado del usuario: " + usuario.isActivo());
+
+        // Verificar interacciones
+        Mockito.verify(prestamoRepository).findByUsuarioId(usuarioId);
+        Mockito.verify(usuarioRepository, Mockito.never()).save(Mockito.any(Usuario.class));
+    }
+
+    //metodo auxiliar para inicializar un usuario con productos
+    private Usuario crearUsuarioConProductos(Long usuarioId, boolean activo) {
+        Usuario usuario = new Usuario();
+        usuario.setId(usuarioId);
+        usuario.setActivo(activo);
+        return usuario;
     }
 }

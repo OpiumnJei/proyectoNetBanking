@@ -49,6 +49,7 @@ public class UsuarioService {
     @Autowired
     private EstadoProductoRepository estadoProductoRepository;
 
+
     //crear un cliente
     public void crearCliente(DatosUsuarioDTO datosUsuariosDTO) {
 
@@ -109,15 +110,17 @@ public class UsuarioService {
             throw new IllegalStateException("El usuario ya se encuentra inactivo.");
         }
 
-        // Inactivar al usuario
-        usuario.setActivo(false);
-        usuarioRepository.save(usuario);
 
-        // Inactivar productos asociados
-        inactivarProductosUsuario(usuario);
+        // verificar e inactivar productos que no tengan monto pendiente por pagar
+        inactivarProductosUsuario(idUsuario);
+
+        //luego de verificarse de que el usuario no tenga productos con deudas, se inactiva
+        usuario.setActivo(false);
+       Usuario usuarioInactivo = usuarioRepository.save(usuario);
     }
 
-    private void inactivarProductosUsuario(Usuario usuario) {
+    //inactivar todos los productos
+    private void inactivarProductosUsuario(Long usuario) {
 
         manejarCuentasDeAhorro(usuario); // Manejar cuentas de ahorro
         manejarTarjetasCredito(usuario);  // Manejar tarjetas de crédito
@@ -125,11 +128,10 @@ public class UsuarioService {
     }
 
     //metodo encargado de manejar la eliminacion y movimiento de fondos entre cuentas de ahorro
-
     @Transactional
-    private void manejarCuentasDeAhorro(Usuario usuario) {
+    private void manejarCuentasDeAhorro(Long usuario) {
         // Obtener las cuentas de ahorro del usuario
-        List<CuentaAhorro> cuentasAhorro = cuentaRepository.findByUsuarioId(usuario.getId());
+        List<CuentaAhorro> cuentasAhorro = cuentaRepository.findByUsuarioId(usuario);
 
         //almacenar la sumatoria de las cuentas de ahorro que no sean principales antes de su eliminacion
         var saldoCuentasNoPrincipales = cuentasAhorro
@@ -156,9 +158,9 @@ public class UsuarioService {
     //metodo encargado de manejar la inactividad de tarjetas de credito
 
     @Transactional
-    private void manejarTarjetasCredito(Usuario usuario) {
+    private void manejarTarjetasCredito(Long usuario) {
         // Obtener las tarjetas de credito del usuario
-        List<TarjetaCredito> tarjetas = tarjetaRepository.findByUsuarioId(usuario.getId());
+        List<TarjetaCredito> tarjetas = tarjetaRepository.findByUsuarioId(usuario);
 
         for (TarjetaCredito tarjeta : tarjetas) {
             if (tarjeta.getSaldoPorPagar().compareTo(BigDecimal.ZERO) > 0) {//si saldo por pagar es mayor que cero
@@ -171,9 +173,9 @@ public class UsuarioService {
     // metodo encargado de manejar la inactividad de los prestamos
 
     @Transactional
-    private void manejarPrestamos(Usuario usuario) {
+    private void manejarPrestamos(Long usuario) {
         // obtener los prestamos asociados al usuario
-        List<Prestamo> prestamos = prestamoRepository.findByUsuarioId(usuario.getId());
+        List<Prestamo> prestamos = prestamoRepository.findByUsuarioId(usuario);
 
         for (Prestamo prestamo : prestamos) {
             if (prestamo.getMontoApagar().compareTo(BigDecimal.ZERO) > 0) { //si monto a pagar es mayor que cero

@@ -1,7 +1,9 @@
 package proyectoNetBanking.domain.prestamos;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import proyectoNetBanking.domain.common.AuditableBaseEntity;
 import proyectoNetBanking.domain.productos.EstadoProducto;
@@ -13,6 +15,8 @@ import java.math.BigDecimal;
 @Table(name = "prestamos")
 @Setter
 @Getter
+@AllArgsConstructor
+@NoArgsConstructor
 public class Prestamo extends AuditableBaseEntity {
 
     @Column(unique = true, nullable = false)
