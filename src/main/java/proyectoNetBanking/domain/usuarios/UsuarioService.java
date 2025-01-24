@@ -113,7 +113,6 @@ public class UsuarioService {
             throw new IllegalStateException("El usuario ya se encuentra inactivo.");
         }
 
-
         // verificar e inactivar productos que no tengan monto pendiente por pagar
         inactivarProductosUsuario(idUsuario);
 
