@@ -23,7 +23,7 @@ public class PrestamoService {
 
     //monto minimo del prestamo
     private final BigDecimal MONTO_MINIMO_PRESTAMO = BigDecimal.valueOf(1000);
-    //cantidad max de prestamos activos que un usuario puede tener
+    //cantidad max de préstamos activos que un usuario puede tener
     private final int CANT_MAX_PRESTAMOS_ACTIVOS = 2;
     @Autowired
     private PrestamoRepository prestamoRepository;
@@ -41,12 +41,15 @@ public class PrestamoService {
     private EstadoProductoRepository estadoProductoRepository;
 
     @Transactional
-    public void crearPrestamo(DatosPrestamoDTO datosPrestamoDTO) {
+    public void crearPrestamo(Long usuarioId, DatosPrestamoDTO datosPrestamoDTO) {
+
+        if (usuarioId == null || usuarioId <= 0) { //validar que numero no sea negativo ni nulo
+            throw new IllegalArgumentException("El ID del usuario no puede ser nulo ni un número negativo");
+        }
 
         //verificar que el usuario exista en la bd
-        Usuario usuario = usuarioRepository.findById(datosPrestamoDTO.idUsuario())
+        Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new UsuarioNotFoundException()); // en lugar de usar la lambda tambien se puede usar UsuarioNotFoundException::new
-
         // Validar que el monto solicitado sea mayor o igual a 1,000 DOP
         if (datosPrestamoDTO.montoPrestamo().compareTo(MONTO_MINIMO_PRESTAMO) < 0) {
             throw new RuntimeException("El monto introducido es menor al monto minimo aceptado.");

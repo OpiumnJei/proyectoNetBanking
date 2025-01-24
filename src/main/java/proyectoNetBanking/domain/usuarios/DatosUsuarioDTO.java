@@ -11,7 +11,7 @@ public record DatosUsuarioDTO(
         @NotBlank
         String apellido,
         @NotBlank
-        @Size(max = 11, message = "La cedula no debe contener mas de 11 caracteres")
+        @Pattern(regexp = "\\d{11}", message = "La cédula debe contener exactamente 11 dígitos numéricos.") //usamos una expresion regular para controlar la cantidad de digitos de la cedula
         String cedula,
         @NotBlank
         @Email(message = "El nuevoCorreo electronico es obligatorio")

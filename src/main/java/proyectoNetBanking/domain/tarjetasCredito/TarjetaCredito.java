@@ -23,13 +23,13 @@ public class TarjetaCredito extends AuditableBaseEntity{
     private String idProducto; // identificador unico en el sistema
 
     @Column(precision = 18, scale = 2)
-    private BigDecimal limiteCredito;
+    private BigDecimal limiteCredito; // limite credito(dinero) que puede tomar el usuario
 
     @Column(precision = 18, scale = 2)
-    private BigDecimal saldoDisponible;
+    private BigDecimal creditoDisponible; //credito(dinero) del que dispone el usuario
 
     @Column(precision = 18, scale = 2)
-    private BigDecimal saldoPorPagar;
+    private BigDecimal saldoPorPagar; //credito consumido que debe pagar el usuario
 
     @OneToOne
     @JoinColumn(name = "estado_producto")//nombre que se le agrega al campo derivado de la relacion en la db
