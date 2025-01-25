@@ -120,7 +120,7 @@ public class PrestamoService {
 
         //verificar que Si el saldo disponible en la cuenta es menor al monto enviado por usuario
         if (cuentaAhorro.getSaldoDisponible().compareTo(datosPagoPrestamoDTO.montoPago()) < 0) {
-            throw new RuntimeException("El monto que se quiere pagar es mayor que el monto disponible en la cuenta");
+            throw new RuntimeException("La cuenta no dispone de el saldo suficiente para realizar el pago.");
         }
 
         //realizar el pago
