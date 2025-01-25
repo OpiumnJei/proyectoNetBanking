@@ -23,7 +23,7 @@ import proyectoNetBanking.infra.errors.UsuarioNotFoundException;
 
 import java.math.BigDecimal;
 import java.util.List;
-
+//comentario desde la rama chore
 @Service //marcamos la clase como un servicio/componente de spring
 public class UsuarioService {
 
