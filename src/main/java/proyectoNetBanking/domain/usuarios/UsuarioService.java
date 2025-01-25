@@ -65,18 +65,11 @@ public class UsuarioService {
         }
 
         // Recuperar el TipoUsuario desde la base de datos
-        TipoUsuario tipoUsuarioEntity = tipoUsuarioRepository.findById(datosUsuariosDTO.tipoUsuarioId())
+        TipoUsuario tipoUsuario = tipoUsuarioRepository.findById(datosUsuariosDTO.tipoUsuarioId())
                 .orElseThrow(() -> new TypeUserNotFoundException("Tipo de usuario no encontrado"));
 
         //crear instancia de usuario
-        Usuario usuario = new Usuario();
-        usuario.setNombre(datosUsuariosDTO.nombre());
-        usuario.setApellido(datosUsuariosDTO.apellido());
-        usuario.setCedula(datosUsuariosDTO.cedula());
-        usuario.setCorreo(datosUsuariosDTO.correo());
-        usuario.setPassword(passwordEncoder.encode(datosUsuariosDTO.password()));//se hashea la contrasenia
-        usuario.setTipoUsuario(tipoUsuarioEntity);
-        usuario.setMontoInicial(datosUsuariosDTO.montoInicial());
+        var usuario = crearUsuario(datosUsuariosDTO, tipoUsuario);
 
         /* usuarioGuardado contiene el id generado por JPA
          * Los frameworks como JPA generan automáticamente el ID para las entidades persistidas,
@@ -85,6 +78,19 @@ public class UsuarioService {
         Usuario usuarioGuardado = usuarioRepository.save(usuario);
 
         asignarCuentaPrincipal(usuarioGuardado);//colocarle cuenta principal por motivos de logica de negocio
+    }
+
+    private Usuario crearUsuario(DatosUsuarioDTO datosUsuariosDTO, TipoUsuario tipoUsuario) {
+        Usuario usuario = new Usuario();
+        usuario.setNombre(datosUsuariosDTO.nombre());
+        usuario.setApellido(datosUsuariosDTO.apellido());
+        usuario.setCedula(datosUsuariosDTO.cedula());
+        usuario.setCorreo(datosUsuariosDTO.correo());
+        usuario.setPassword(passwordEncoder.encode(datosUsuariosDTO.password()));//se hashea la contrasenia
+        usuario.setTipoUsuario(tipoUsuario);
+        usuario.setMontoInicial(datosUsuariosDTO.montoInicial());
+
+        return usuario;
     }
 
     //asignar cuenta de ahorro principal al usuario
@@ -135,12 +141,7 @@ public class UsuarioService {
         // Obtener las cuentas de ahorro del usuario
         List<CuentaAhorro> cuentasAhorro = cuentaRepository.findByUsuarioId(usuario);
 
-        //almacenar la sumatoria de las cuentas de ahorro que no sean principales antes de su eliminacion
-        var saldoCuentasNoPrincipales = cuentasAhorro
-                .stream() // Se convierte la lista en un Stream para procesarla de manera funcional
-                .filter(cuenta -> !cuenta.isEsPrincipal()) // Filtra las cuentas que NO son principales.
-                .map(CuentaAhorro::getSaldoDisponible) // Obtiene el saldo disponible de cada cuenta.
-                .reduce(BigDecimal.ZERO, BigDecimal::add); // Suma todos los saldos obtenidos
+        var saldoCuentasSecundarias = calcularSaldoCuentasSecundarias(cuentasAhorro); //almacena la sumatoria de los saldos
 
         for (CuentaAhorro cuenta : cuentasAhorro) { //Para cada cuenta de ahorro
             if (!cuenta.isEsPrincipal()) {
@@ -151,14 +152,22 @@ public class UsuarioService {
             } else {
                 // Transferir saldo acumulado a la cuenta principal
                 // como ambos metodos estan referenciados por atributos BigDecimal podemos usar el metodo add
-                cuenta.setSaldoDisponible(cuenta.getSaldoDisponible().add(saldoCuentasNoPrincipales));
+                cuenta.setSaldoDisponible(cuenta.getSaldoDisponible().add(saldoCuentasSecundarias));
                 cuenta.setEstadoProducto(colocarEstadoProductos(EstadoProductoEnum.INACTIVO.name())); // Inactivar cuenta principal
                 cuentaRepository.save(cuenta);
             }
         }
     }
-    //metodo encargado de manejar la inactividad de tarjetas de credito
 
+    private BigDecimal calcularSaldoCuentasSecundarias(List<CuentaAhorro> cuentasAhorro) {
+                return cuentasAhorro
+                .stream() // Se convierte la lista en un Stream para procesarla de manera funcional
+                .filter(cuenta -> !cuenta.isEsPrincipal()) // Filtra las cuentas que NO son principales.
+                .map(CuentaAhorro::getSaldoDisponible) // Obtiene el saldo disponible de cada cuenta.
+                .reduce(BigDecimal.ZERO, BigDecimal::add); // Suma todos los saldos obtenidos
+    }
+
+    //metodo encargado de manejar la inactividad de tarjetas de credito
     @Transactional
     private void manejarTarjetasCredito(Long usuario) {
         // Obtener las tarjetas de credito del usuario
@@ -202,7 +211,6 @@ public class UsuarioService {
         actualizarDatos(usuario, datosUsuarioDTO); //se actualizan los datos del usuario
         CuentaAhorro cuentaAhorro = obtenerCuentaPrincipal(usuarioId); //se busca la cuenta principal del usuario
         actualizarSaldoCuentaPrincipal(cuentaAhorro, datosUsuarioDTO.montoAdicinal()); //se actualiza el saldo de la cuenta asociada al usuario
-
 
     }
 

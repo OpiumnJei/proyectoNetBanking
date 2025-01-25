@@ -56,7 +56,6 @@ class UsuarioServiceTest {
     @Mock
     private TarjetaRepository tarjetaRepository;
 
-
     @Captor //es una anotación de Mockito que simplifica la creación de un ArgumentCaptor
     // se utiliza para capturar y analizar los valores reales que se pasan a un mock en tiempo de ejecución
     ArgumentCaptor<CuentaAhorro> cuentaCaptor;
