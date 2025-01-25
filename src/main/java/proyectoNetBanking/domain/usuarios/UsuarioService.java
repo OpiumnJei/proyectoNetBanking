@@ -1,7 +1,6 @@
 package proyectoNetBanking.domain.usuarios;
 
 
-import jakarta.validation.constraints.DecimalMin;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -14,6 +13,7 @@ import proyectoNetBanking.domain.prestamos.PrestamoRepository;
 import proyectoNetBanking.domain.productos.EstadoProducto;
 import proyectoNetBanking.domain.productos.EstadoProductoEnum;
 import proyectoNetBanking.domain.productos.EstadoProductoRepository;
+import proyectoNetBanking.domain.productos.ProductoUsuarioDTO;
 import proyectoNetBanking.domain.tarjetasCredito.TarjetaCredito;
 import proyectoNetBanking.domain.tarjetasCredito.TarjetaRepository;
 import proyectoNetBanking.infra.errors.CuentaNotFoundException;
@@ -22,7 +22,9 @@ import proyectoNetBanking.infra.errors.TypeUserNotFoundException;
 import proyectoNetBanking.infra.errors.UsuarioNotFoundException;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
+
 //comentario desde la rama chore
 @Service //marcamos la clase como un servicio/componente de spring
 public class UsuarioService {
@@ -81,6 +83,7 @@ public class UsuarioService {
     }
 
     private Usuario crearUsuario(DatosUsuarioDTO datosUsuariosDTO, TipoUsuario tipoUsuario) {
+
         Usuario usuario = new Usuario();
         usuario.setNombre(datosUsuariosDTO.nombre());
         usuario.setApellido(datosUsuariosDTO.apellido());
@@ -160,7 +163,7 @@ public class UsuarioService {
     }
 
     private BigDecimal calcularSaldoCuentasSecundarias(List<CuentaAhorro> cuentasAhorro) {
-                return cuentasAhorro
+        return cuentasAhorro
                 .stream() // Se convierte la lista en un Stream para procesarla de manera funcional
                 .filter(cuenta -> !cuenta.isEsPrincipal()) // Filtra las cuentas que NO son principales.
                 .map(CuentaAhorro::getSaldoDisponible) // Obtiene el saldo disponible de cada cuenta.
@@ -241,6 +244,79 @@ public class UsuarioService {
         usuario.setCedula(datosUsuarioDTO.nuevaCedula());
     }
 
+    //Se retorna una lista de todos los productos activos de un usuario
+    public List<ProductoUsuarioDTO> obtenerProductosUsuario(Long usuarioId) {
+        // Verificar que el usuario exista
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new UsuarioNotFoundException("Usuario no encontrado"));
+
+        // Obtener los productos activos del usuario
+        List<CuentaAhorro> cuentasAhorro = listarCuentasAhorroActivas(usuarioId);
+        List<TarjetaCredito> tarjetasCredito = listarTarjetasCreditoActivas(usuarioId);
+        List<Prestamo> prestamos = listarPrestamosActivos(usuarioId);
+
+        return listarProductosUsuarios(cuentasAhorro, tarjetasCredito, prestamos);
+    }
+
+
+    private List<CuentaAhorro> listarCuentasAhorroActivas(Long usuarioId) {
+        return cuentaRepository.findByUsuarioId(usuarioId)
+                .stream()
+                .filter(c -> esProductoActivo(c.getEstadoProducto()))
+                .toList();
+    }
+
+    private List<TarjetaCredito> listarTarjetasCreditoActivas(Long usuarioId) {
+        return tarjetaRepository.findByUsuarioId(usuarioId)
+                .stream()
+                .filter(t -> esProductoActivo(t.getEstadoProducto()))
+                .toList();
+    }
+
+    private List<Prestamo> listarPrestamosActivos(Long usuarioId) {
+        return prestamoRepository.findByUsuarioId(usuarioId)
+                .stream()
+                .filter(p -> esProductoActivo(p.getEstadoProducto()))
+                .toList();
+    }
+
+    private List<ProductoUsuarioDTO> listarProductosUsuarios(List<CuentaAhorro> cuentasAhorro, List<TarjetaCredito> tarjetasCredito, List<Prestamo> prestamos) {
+        List<ProductoUsuarioDTO> productos = new ArrayList<>();
+
+        // Agregar cuentas de ahorro al listado
+        for (CuentaAhorro cuenta : cuentasAhorro) {
+            productos.add(ProductoUsuarioDTO.builder() //usando builder de lombok
+                    .tipoProducto("Cuenta de ahorro")
+                    .productoId(cuenta.getId())
+                    .saldoDisponible(cuenta.getSaldoDisponible())
+                    .build()
+            );
+        }
+
+        // Agregar tarjetas de crédito al listado
+        for (TarjetaCredito tarjeta : tarjetasCredito) {
+            productos.add(ProductoUsuarioDTO.builder()
+                    .tipoProducto("Tarjeta de credito")
+                    .productoId(tarjeta.getId())
+                    .saldoPorPagar(tarjeta.getSaldoPorPagar())
+                    .build()
+            );
+        }
+
+        // Agregar préstamos al listado
+        for (Prestamo prestamo : prestamos) {
+            productos.add(ProductoUsuarioDTO.builder()
+                    .tipoProducto("Prestamo")
+                    .productoId(prestamo.getId())
+                    .saldoPorPagar(prestamo.getMontoApagar())
+                    .build()
+            );
+        }
+
+        // Retornar el listado de productos
+        return productos;
+    }
+
     //generar id del producto
     public String generarIdUnicoProducto() {
        /*
@@ -250,9 +326,13 @@ public class UsuarioService {
         return generadorId.generarIdUnicoProducto(cuentaRepository::existsByIdProducto); //se traduce del repositorio toma el metodo existsbyIdProducto como una referencia
     }
 
-    public EstadoProducto colocarEstadoProductos(String nombreEstado) {
-
+    private EstadoProducto colocarEstadoProductos(String nombreEstado) {
         return estadoProductoRepository.findByNombreEstadoIgnoreCase(nombreEstado)
                 .orElseThrow(() -> new RuntimeException("El estado no existe"));
+    }
+
+    //verificar si un producto esta activo
+    private boolean esProductoActivo(EstadoProducto estadoProducto) {
+        return estadoProducto.getNombreEstado().equalsIgnoreCase(EstadoProductoEnum.ACTIVO.name());
     }
 }
