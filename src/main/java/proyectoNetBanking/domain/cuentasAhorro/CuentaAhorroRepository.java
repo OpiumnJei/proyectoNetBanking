@@ -3,6 +3,7 @@ package proyectoNetBanking.domain.cuentasAhorro;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface CuentaAhorroRepository extends JpaRepository<CuentaAhorro, Long> {
 
@@ -20,5 +21,7 @@ public interface CuentaAhorroRepository extends JpaRepository<CuentaAhorro, Long
     List<CuentaAhorro> findByUsuarioId(Long idUsuario);
 
     //se hace un conteo de los registros en la tabla de cuentas_ahorro que coincidan con el idUsario
-    int  countByUsuarioId(Long idUsuario);
+    int countByUsuarioId(Long idUsuario);
+
+    Optional<CuentaAhorro> findByIdProducto(String numeroCuenta);
 }
