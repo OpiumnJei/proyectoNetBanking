@@ -1,6 +1,8 @@
 package proyectoNetBanking.domain.beneficiarios;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import proyectoNetBanking.domain.cuentasAhorro.CuentaAhorro;
 import proyectoNetBanking.domain.cuentasAhorro.CuentaAhorroRepository;
@@ -11,8 +13,6 @@ import proyectoNetBanking.infra.errors.BeneficiarioNotFoundException;
 import proyectoNetBanking.infra.errors.CuentaNotFoundException;
 import proyectoNetBanking.infra.errors.UsuarioNotFoundException;
 
-import java.util.ArrayList;
-import java.util.List;
 
 @Service
 public class BeneficiarioService {
@@ -58,22 +58,23 @@ public class BeneficiarioService {
         beneficiarioRepository.save(beneficiario);
     }
 
-    //listar beneficiaros
-    public List<DatosBeneficiarioDTO> listarBeneficiarios(Long usuarioId){
+    //listar beneficiaros usando la paginacion
+    //pageable permite espeficicar que cantidad de datos deben ser devueltos, tanto la forma en como los datos deben ordenarse, etc
+    public Page<DatosBeneficiarioDTO> listarBeneficiarios(Long usuarioId, Pageable pageable){
 
         // Verificar que el usuario exista
         if (!usuarioRepository.existsById(usuarioId)) {
             throw new UsuarioNotFoundException("Usuario no encontrado");
         }
 
-        // Obtener beneficiarios y mapearlos a DTOs
-        return beneficiarioRepository.findByUsuarioId(usuarioId)// se los ids en la tabla de beneficiarios
-                .stream() //se convierte la lista a un stream
-                .map(beneficiario -> new DatosBeneficiarioDTO( //por cada objeto del tipo beneficiario se crea un nuevo objeto del tipo DatosBeneficiarioDTO
-                        beneficiario.getNumCuentaBeneficiario(), //se mapea el numero de cuenta
-                        beneficiario.getNombreBeneficiario()
-                ))
-                .toList(); // Convierte el stream en una lista
+        // paginas de beneficiarios
+        Page<Beneficiario> beneficiarios = beneficiarioRepository.findByUsuarioId(usuarioId, pageable);
+
+        // se retornan los datos mapeados que contienen la informacion de la pagina actual
+        return beneficiarios.map(beneficiario -> new DatosBeneficiarioDTO(
+                beneficiario.getNombreBeneficiario(),
+                beneficiario.getNumCuentaBeneficiario()
+        ));
     }
 
     //eliminar un beneficiario
@@ -81,9 +82,6 @@ public class BeneficiarioService {
         Beneficiario beneficiario = beneficiarioRepository.findById(beneficiarioId)
                 .orElseThrow(() -> new BeneficiarioNotFoundException("Beneficiario no encontrado"));
 
-//        if (!beneficiario.getUsuarioId().getId().equals(usuarioAutenticado.getId())) {
-//            throw new UnauthorizedActionException("No tiene permiso para eliminar este beneficiario");
-//        }
         beneficiarioRepository.delete(beneficiario);
     }
 }
