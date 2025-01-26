@@ -136,13 +136,19 @@ CREATE TABLE `tarjetas_credito` (
 CREATE TABLE `transacciones` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `tipo_transaccion` tinyint(4) DEFAULT NULL,
-  `usuario_origen` bigint(20) DEFAULT NULL,
-  `usuario_destino` bigint(20) DEFAULT NULL,
+  `cuenta_origen_id` bigint(20) DEFAULT NULL,
+  `cuenta_destino_id` bigint(20) DEFAULT NULL,
+  `tarjeta_credito_id` bigint(20) DEFAULT NULL,
+  `prestamo_id` bigint(20) DEFAULT NULL,
   `fecha` datetime(6) DEFAULT NULL,
   `descripcion_transaccion` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `FKto1yy2ibwvcbcvsad5n56ccdb` (`usuario_destino`),
-  KEY `FK3nmjw2w14hniq2s1te57gnj9o` (`usuario_origen`),
-  CONSTRAINT `FK3nmjw2w14hniq2s1te57gnj9o` FOREIGN KEY (`usuario_origen`) REFERENCES `usuarios` (`id`),
-  CONSTRAINT `FKto1yy2ibwvcbcvsad5n56ccdb` FOREIGN KEY (`usuario_destino`) REFERENCES `usuarios` (`id`)
+  KEY `FK_cuenta_origen` (`cuenta_origen_id`),
+  KEY `FK_cuenta_destino` (`cuenta_destino_id`),
+  KEY `FK_tarjeta_credito` (`tarjeta_credito_id`),
+  KEY `FK_prestamo` (`prestamo_id`),
+  CONSTRAINT `FK_cuenta_origen` FOREIGN KEY (`cuenta_origen_id`) REFERENCES `cuentas_ahorro` (`id`),
+  CONSTRAINT `FK_cuenta_destino` FOREIGN KEY (`cuenta_destino_id`) REFERENCES `cuentas_ahorro` (`id`),
+  CONSTRAINT `FK_tarjeta_credito` FOREIGN KEY (`tarjeta_credito_id`) REFERENCES `tarjetas_credito` (`id`),
+  CONSTRAINT `FK_prestamo` FOREIGN KEY (`prestamo_id`) REFERENCES `prestamos` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
