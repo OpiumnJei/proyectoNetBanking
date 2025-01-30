@@ -1,4 +1,4 @@
-package proyectoNetBanking.domain.tarjetasCredito;
+package proyectoNetBanking.domain.pagos;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;

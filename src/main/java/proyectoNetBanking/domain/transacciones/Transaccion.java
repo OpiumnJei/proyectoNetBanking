@@ -1,6 +1,7 @@
 package proyectoNetBanking.domain.transacciones;
 
 import jakarta.persistence.*;
+import lombok.*;
 import proyectoNetBanking.domain.cuentasAhorro.CuentaAhorro;
 import proyectoNetBanking.domain.prestamos.Prestamo;
 import proyectoNetBanking.domain.tarjetasCredito.TarjetaCredito;
@@ -11,6 +12,11 @@ import java.time.LocalDateTime;
 
 @Entity(name = "Transaccion")
 @Table(name = "transacciones")
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
+@Builder
 public class Transaccion {
 
     @Id
@@ -43,4 +49,5 @@ public class Transaccion {
 
     @Column(length = 255)
     private String descripcionTransaccion;
+
 }
