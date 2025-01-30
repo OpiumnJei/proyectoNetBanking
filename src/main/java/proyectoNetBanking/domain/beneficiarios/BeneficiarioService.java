@@ -27,7 +27,7 @@ public class BeneficiarioService {
     private BeneficiarioRepository beneficiarioRepository;
 
     // crear un beneficiario
-    public void obtenerDatosBeneficiaro(DatosBeneficiarioDTO datosBeneficiarioDTO, Long usuarioId) {
+    public void validarDatosBeneficiaro(DatosBeneficiarioDTO datosBeneficiarioDTO, Long usuarioId) {
 
         String numeroCuenta = datosBeneficiarioDTO.numeroCuenta();
         CuentaAhorro cuentaAhorro = cuentaRepository.findByIdProducto(numeroCuenta)

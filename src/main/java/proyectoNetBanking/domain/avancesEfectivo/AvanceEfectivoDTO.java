@@ -1,4 +1,4 @@
-package proyectoNetBanking.domain.tarjetasCredito;
+package proyectoNetBanking.domain.avancesEfectivo;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
