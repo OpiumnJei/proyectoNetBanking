@@ -37,7 +37,6 @@ public class PagoBeneficiarioService {
         String numCuenta = beneficiario.getNumCuentaBeneficiario();
 
         //verificar que la cuenta del beneficiario exista
-
         CuentaAhorro cuentaBeneficiario = obtenerCuentaAhorroBeneficiario(numCuenta);
 
         Long cuentaOrigen = datosPagoBeneficiarioDTO.idcuentaOrigen();
@@ -65,7 +64,7 @@ public class PagoBeneficiarioService {
 
     private void registrarPagoBeneficiario(CuentaAhorro cuentaBeneficiario, CuentaAhorro cuentaUsuario, BigDecimal montoPago) {
         //se le suma el monto a la cuenta del beneficiario
-        cuentaBeneficiario.setSaldoDisponible(cuentaUsuario.getSaldoDisponible().add(montoPago));
+        cuentaBeneficiario.setSaldoDisponible(cuentaBeneficiario.getSaldoDisponible().add(montoPago));
         cuentaAhorroRepository.save(cuentaBeneficiario);
 
         //se le resta el monto pago a la cuenta usuario
