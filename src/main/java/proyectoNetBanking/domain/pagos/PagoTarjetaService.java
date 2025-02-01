@@ -10,12 +10,9 @@ import proyectoNetBanking.domain.tarjetasCredito.TarjetaRepository;
 import proyectoNetBanking.domain.transacciones.TipoTransaccion;
 import proyectoNetBanking.domain.transacciones.Transaccion;
 import proyectoNetBanking.domain.transacciones.TransaccionService;
-import proyectoNetBanking.domain.usuarios.Usuario;
-import proyectoNetBanking.domain.usuarios.UsuarioRepository;
 import proyectoNetBanking.infra.errors.CuentaNotFoundException;
 import proyectoNetBanking.infra.errors.SaldoInsuficienteException;
 import proyectoNetBanking.infra.errors.TarjetaNotFoundException;
-import proyectoNetBanking.infra.errors.UsuarioNotFoundException;
 
 import java.math.BigDecimal;
 

@@ -88,7 +88,7 @@ public class PagoPrestamoService {
         prestamo.setMontoPagado(prestamo.getMontoPagado().add(montoPago));
 
         //restar la cantidad pagada por el usuario al monto original del prestamo
-        prestamo.setMontoApagar(prestamo.getMontoPrestamo().subtract(montoPago));
+        prestamo.setMontoApagar(prestamo.getMontoApagar().subtract(montoPago));
 
         if (prestamo.getMontoApagar().compareTo(BigDecimal.ZERO) == 0) { //si la cantidad a pagar es 0, quiere decir que ya esta pagp
             prestamo.setEstadoProducto(colocarEstadoProductos(EstadoProductoEnum.INACTIVO.name()));
@@ -98,10 +98,12 @@ public class PagoPrestamoService {
     }
 
 
-    private void validarPrestamoUsuario(Prestamo prestamo, Usuario usuario) {
+    private Prestamo validarPrestamoUsuario(Prestamo prestamo, Usuario usuario) {
         if (!prestamo.getUsuario().getId().equals(usuario.getId())) {
             throw new RuntimeException("El prestamo especificado no pertenece al usuario");
         }
+
+        return prestamo;
     }
 
     //verificar que Si el saldo disponible en la cuenta es menor al monto enviado por usuario
@@ -131,7 +133,7 @@ public class PagoPrestamoService {
                 .orElseThrow(() -> new RuntimeException("El prestamo no existe."));
     }
     //metodo encargado de la gestion de estados
-    public EstadoProducto colocarEstadoProductos(String nombreEstado) {
+    private EstadoProducto colocarEstadoProductos(String nombreEstado) {
 
         return estadoProductoRepository.findByNombreEstadoIgnoreCase(nombreEstado)
                 .orElseThrow(() -> new RuntimeException("El estado no existe"));
