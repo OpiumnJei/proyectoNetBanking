@@ -10,4 +10,6 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     boolean existsByCedula(@NotBlank String cedula);
 
     boolean existsByCorreo(@NotBlank String correo);
+
+    Long countByTipoUsuarioAndActivo(TipoUsuario usuarioCliente, boolean clienteActivo);
 }

@@ -62,6 +62,7 @@ public class UsuarioService {
         if (usuarioRepository.existsByCedula(datosUsuariosDTO.cedula())) {
             throw new DuplicatedItemsException("La cédula ya se encuentra registrada en el sistema.");
         }
+
         if (usuarioRepository.existsByCorreo(datosUsuariosDTO.correo())) {
             throw new DuplicatedItemsException("El nuevoCorreo ya se encuentra registrado en el sistema.");
         }

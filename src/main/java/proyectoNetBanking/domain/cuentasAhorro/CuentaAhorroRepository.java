@@ -1,6 +1,7 @@
 package proyectoNetBanking.domain.cuentasAhorro;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import proyectoNetBanking.domain.productos.EstadoProducto;
 
 import java.util.List;
 import java.util.Optional;
@@ -10,13 +11,6 @@ public interface CuentaAhorroRepository extends JpaRepository<CuentaAhorro, Long
     //verificar si el id existe en la bd
     boolean existsByIdProducto(String idProducto);
 
-    //retorna true
-//    boolean existsByIdProducto();
-
-
-    //verificar si el hay un usuario relacionado a la cuenta de ahorro
-//    boolean existsByUsuarioId(Long id);
-
     //trae una lista de cuentas asociadas a idUsuario
     List<CuentaAhorro> findByUsuarioId(Long idUsuario);
 
@@ -24,4 +18,6 @@ public interface CuentaAhorroRepository extends JpaRepository<CuentaAhorro, Long
     int countByUsuarioId(Long idUsuario);
 
     Optional<CuentaAhorro> findByIdProducto(String numeroCuenta);
+
+    Long countByEstadoProductoId(EstadoProducto estadoActivo);
 }
