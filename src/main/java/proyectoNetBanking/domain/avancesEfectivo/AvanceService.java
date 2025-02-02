@@ -16,6 +16,7 @@ import proyectoNetBanking.infra.errors.CuentaNotFoundException;
 import proyectoNetBanking.infra.errors.TarjetaNotFoundException;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @Service
 public class AvanceService {
@@ -40,22 +41,17 @@ public class AvanceService {
     public Transaccion realizarAvanceEfectivo(AvanceEfectivoDTO avanceEfectivoDTO) {
 
         // Validar que la tarjeta de crédito exista
-        TarjetaCredito tarjetaCredito = tarjetaRepository.findById(avanceEfectivoDTO.tarjetaCreditoId())
-                .orElseThrow(() -> new TarjetaNotFoundException("Tarjeta de crédito no encontrada."));
+        TarjetaCredito tarjetaCredito = obtenerTarjetaCredito(avanceEfectivoDTO.tarjetaCreditoId());
 
         // Validar que la cuenta de ahorro exista
-        CuentaAhorro cuentaAhorro = cuentaAhorroRepository.findById(avanceEfectivoDTO.cuentaAhorroId())
-                .orElseThrow(() -> new CuentaNotFoundException("La cuenta de ahorro no existe."));
+        CuentaAhorro cuentaAhorro = obtenerCuentaAhorro(avanceEfectivoDTO.cuentaAhorroId());
 
         BigDecimal montoAvanceEfectivo = avanceEfectivoDTO.montoAvanceEfectivo();//monto solicitado por el usuario
 
-        if (montoAvanceEfectivo.compareTo(tarjetaCredito.getCreditoDisponible()) > 0) {// si el monto supera el credito disponible en la tarjeta
-            throw new RuntimeException("El monto del avance supera el crédito disponible de la tarjeta.");
-        }
+        validarMontoAvance(montoAvanceEfectivo, tarjetaCredito);
 
         // Calcular el monto total con interés
-        BigDecimal interes = montoAvanceEfectivo.multiply(BigDecimal.valueOf(0.0625));// 6.25 % del monto tomado como avance
-        BigDecimal deudaTotal = montoAvanceEfectivo.add(interes);
+        BigDecimal deudaTotal = calcularMontoInteres(montoAvanceEfectivo);
 
         // Actualizar saldo de la cuenta de ahorro
         cuentaAhorro.setSaldoDisponible(cuentaAhorro.getSaldoDisponible().add(montoAvanceEfectivo));
@@ -73,6 +69,33 @@ public class AvanceService {
                 montoAvanceEfectivo,
                 "Se realizo un avance de afectivo desde una tarjea de credito"
         );
+    }
+
+    private BigDecimal calcularMontoInteres(BigDecimal montoAvanceEfectivo) {
+        BigDecimal interes =
+                montoAvanceEfectivo
+                        .multiply(BigDecimal
+                                .valueOf(0.0625)) // 6.25 % del monto tomado como avance
+                        .setScale(2, RoundingMode.HALF_UP); // redondeado a dos decimales hacia arriba
+
+        //se retorna el monto total, montoAvanceEfectio + interes
+        return montoAvanceEfectivo.add(interes);
+    }
+
+    private void validarMontoAvance(BigDecimal montoAvanceEfectivo, TarjetaCredito tarjetaCredito) {
+        if (montoAvanceEfectivo.compareTo(tarjetaCredito.getCreditoDisponible()) > 0) {// si el monto supera el credito disponible en la tarjeta
+            throw new RuntimeException("El monto del avance supera el crédito disponible de la tarjeta.");
+        }
+    }
+
+    private TarjetaCredito obtenerTarjetaCredito(Long tarjetaId) {
+        return tarjetaRepository.findById(tarjetaId)
+                .orElseThrow(() -> new TarjetaNotFoundException("Tarjeta de crédito no encontrada."));
+    }
+
+    private CuentaAhorro obtenerCuentaAhorro(Long idCuenta) {
+        return cuentaAhorroRepository.findById(idCuenta)
+                .orElseThrow(() -> new CuentaNotFoundException("La cuenta no ha sido encontrada."));
     }
 
     private void actualizarSaldoPorPagar(TarjetaCredito tarjetaCredito, BigDecimal montoAvanceEfectivo, BigDecimal deudaTotal) {
