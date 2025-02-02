@@ -54,7 +54,6 @@ public class TransferenciaService {
         cuentaAhorroRepository.save(cuentaOrigen);
     }
 
-
     //verificar que Si el saldo disponible en la cuenta es menor al monto enviado por usuario
     private void validarSaldoDisponible(CuentaAhorro cuentaAhorro, BigDecimal montoPago) {
         if (cuentaAhorro.getSaldoDisponible().compareTo(montoPago) < 0) {
@@ -62,11 +61,8 @@ public class TransferenciaService {
         }
     }
 
-
     private CuentaAhorro obtenerCuentaAhorro(Long idCuenta) {
         return cuentaAhorroRepository.findById(idCuenta)
                 .orElseThrow(() -> new CuentaNotFoundException("La cuenta no ha sido encontrada."));
     }
-
-
 }
