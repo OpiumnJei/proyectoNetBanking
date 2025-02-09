@@ -1,7 +1,6 @@
 package proyectoNetBanking.domain.usuarios;
 
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -10,15 +9,19 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import proyectoNetBanking.domain.common.GeneradorId;
 import proyectoNetBanking.domain.cuentasAhorro.CuentaAhorro;
-import proyectoNetBanking.domain.cuentasAhorro.CuentaAhorroRepository;
+import proyectoNetBanking.repository.CuentaAhorroRepository;
 import proyectoNetBanking.domain.prestamos.Prestamo;
-import proyectoNetBanking.domain.prestamos.PrestamoRepository;
+import proyectoNetBanking.repository.PrestamoRepository;
 import proyectoNetBanking.domain.productos.EstadoProducto;
-import proyectoNetBanking.domain.productos.EstadoProductoRepository;
+import proyectoNetBanking.repository.EstadoProductoRepository;
 import proyectoNetBanking.domain.tarjetasCredito.TarjetaCredito;
-import proyectoNetBanking.domain.tarjetasCredito.TarjetaRepository;
+import proyectoNetBanking.repository.TarjetaRepository;
+import proyectoNetBanking.dto.usuarios.DatosUsuarioDTO;
 import proyectoNetBanking.infra.errors.DuplicatedItemsException;
 import proyectoNetBanking.infra.errors.TypeUserNotFoundException;
+import proyectoNetBanking.repository.TipoUsuarioRepository;
+import proyectoNetBanking.repository.UsuarioRepository;
+import proyectoNetBanking.service.usuarios.UsuarioService;
 
 import java.math.BigDecimal;
 import java.util.Collections;

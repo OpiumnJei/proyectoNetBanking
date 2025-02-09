@@ -4,9 +4,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import proyectoNetBanking.domain.productos.EstadoProducto;
-import proyectoNetBanking.domain.productos.EstadoProductoRepository;
+import proyectoNetBanking.repository.EstadoProductoRepository;
 import proyectoNetBanking.domain.usuarios.TipoUsuario;
-import proyectoNetBanking.domain.usuarios.TipoUsuarioRepository;
+import proyectoNetBanking.repository.TipoUsuarioRepository;
 
 //CLASE USADA PARA LA INICIALIZACION DE LOS DATOS CRITICOS/ESENCIALES
 @Component
