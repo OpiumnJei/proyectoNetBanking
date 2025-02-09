@@ -2,35 +2,31 @@ package proyectoNetBanking.service.usuarios;
 
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import proyectoNetBanking.domain.common.GeneradorId;
 import proyectoNetBanking.domain.cuentasAhorro.CuentaAhorro;
-import proyectoNetBanking.repository.CuentaAhorroRepository;
 import proyectoNetBanking.domain.prestamos.Prestamo;
-import proyectoNetBanking.repository.PrestamoRepository;
 import proyectoNetBanking.domain.productos.EstadoProducto;
 import proyectoNetBanking.domain.productos.EstadoProductoEnum;
-import proyectoNetBanking.repository.EstadoProductoRepository;
-import proyectoNetBanking.dto.productos.ProductoUsuarioDTO;
 import proyectoNetBanking.domain.tarjetasCredito.TarjetaCredito;
-import proyectoNetBanking.repository.TarjetaRepository;
-import proyectoNetBanking.domain.usuarios.*;
+import proyectoNetBanking.domain.usuarios.TipoUsuario;
+import proyectoNetBanking.domain.usuarios.TipoUsuarioEnum;
+import proyectoNetBanking.domain.usuarios.Usuario;
+import proyectoNetBanking.dto.productos.ProductoUsuarioDTO;
 import proyectoNetBanking.dto.usuarios.ActualizarDatosUsuarioDTO;
-import proyectoNetBanking.dto.usuarios.DatosUsuarioDTO;
+import proyectoNetBanking.dto.usuarios.DatosClienteDTO;
 import proyectoNetBanking.infra.errors.CuentaNotFoundException;
 import proyectoNetBanking.infra.errors.DuplicatedItemsException;
 import proyectoNetBanking.infra.errors.TypeUserNotFoundException;
 import proyectoNetBanking.infra.errors.UsuarioNotFoundException;
-import proyectoNetBanking.repository.TipoUsuarioRepository;
-import proyectoNetBanking.repository.UsuarioRepository;
+import proyectoNetBanking.repository.*;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
-//comentario desde la rama chore
 @Service //marcamos la clase como un servicio/componente de spring
 public class UsuarioService {
 
@@ -39,7 +35,7 @@ public class UsuarioService {
     private UsuarioRepository usuarioRepository;
 
     @Autowired
-    private BCryptPasswordEncoder passwordEncoder;
+    private PasswordEncoder passwordEncoder;
 
     @Autowired
     private TipoUsuarioRepository tipoUsuarioRepository;
@@ -59,45 +55,34 @@ public class UsuarioService {
     @Autowired
     private EstadoProductoRepository estadoProductoRepository;
 
-
     //crear un cliente
-    public void crearCliente(DatosUsuarioDTO datosUsuariosDTO) {
+    public void crearUsuarioCliente(DatosClienteDTO datosClienteDTO) {
 
-        //se valida que tanto la cedula y el nuevoCorreo no esten previamente registrados en la bd
-        if (usuarioRepository.existsByCedula(datosUsuariosDTO.cedula())) {
-            throw new DuplicatedItemsException("La cédula ya se encuentra registrada en el sistema.");
-        }
+        validarCedula(datosClienteDTO.cedula());
+        validarCorreo(datosClienteDTO.correo());
 
-        if (usuarioRepository.existsByCorreo(datosUsuariosDTO.correo())) {
-            throw new DuplicatedItemsException("El nuevoCorreo ya se encuentra registrado en el sistema.");
-        }
+        var cliente = crearCliente(datosClienteDTO);
 
-        // Recuperar el TipoUsuario desde la base de datos
-        TipoUsuario tipoUsuario = tipoUsuarioRepository.findById(datosUsuariosDTO.tipoUsuarioId())
-                .orElseThrow(() -> new TypeUserNotFoundException("Tipo de usuario no encontrado"));
+        /*
+        clienteGuardado contiene el id generado por JPA,
+        Los frameworks como JPA generan automáticamente el ID para las entidades persistidas,
+        y este ID estará presente en el objeto retornado por save.
+        */
+        Usuario clienteGuardado = usuarioRepository.save(cliente);
 
-        //crear instancia de usuario
-        var usuario = crearUsuario(datosUsuariosDTO, tipoUsuario);
-
-        /* usuarioGuardado contiene el id generado por JPA
-         * Los frameworks como JPA generan automáticamente el ID para las entidades persistidas,
-         *  y este ID estará presente en el objeto retornado por save.
-         * */
-        Usuario usuarioGuardado = usuarioRepository.save(usuario);
-
-        asignarCuentaPrincipal(usuarioGuardado);//colocarle cuenta principal por motivos de logica de negocio
+        asignarCuentaPrincipal(clienteGuardado);//colocarle cuenta principal por motivos de logica de negocio
     }
 
-    private Usuario crearUsuario(DatosUsuarioDTO datosUsuariosDTO, TipoUsuario tipoUsuario) {
+    private Usuario crearCliente(DatosClienteDTO datosClienteDTO) {
 
         Usuario usuario = new Usuario();
-        usuario.setNombre(datosUsuariosDTO.nombre());
-        usuario.setApellido(datosUsuariosDTO.apellido());
-        usuario.setCedula(datosUsuariosDTO.cedula());
-        usuario.setCorreo(datosUsuariosDTO.correo());
-        usuario.setPassword(passwordEncoder.encode(datosUsuariosDTO.password()));//se hashea la contrasenia
-        usuario.setTipoUsuario(tipoUsuario);
-        usuario.setMontoInicial(datosUsuariosDTO.montoInicial());
+        usuario.setNombre(datosClienteDTO.nombre());
+        usuario.setApellido(datosClienteDTO.apellido());
+        usuario.setCedula(datosClienteDTO.cedula());
+        usuario.setCorreo(datosClienteDTO.correo());
+        usuario.setPassword(passwordEncoder.encode(datosClienteDTO.password()));//se hashea la contrasenia
+        usuario.setTipoUsuario(colocarTipoUsuario(TipoUsuarioEnum.CLIENTE.name()));
+        usuario.setMontoInicial(datosClienteDTO.montoInicial());
 
         return usuario;
     }
@@ -118,10 +103,9 @@ public class UsuarioService {
     }
 
     @Transactional // se ejecuta el codigo dentro de una transaccion
-    public void inactivarUsuario(Long idUsuario) {
+    public void inactivarUsuario(Long usuarioId) {
 
-        Usuario usuario = usuarioRepository.findById(idUsuario)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        Usuario usuario = obtenerUsuario(usuarioId);
 
         // Verificar si el usuario ya está inactivo
         if (!usuario.isActivo()) {
@@ -129,7 +113,7 @@ public class UsuarioService {
         }
 
         // verificar e inactivar productos que no tengan monto pendiente por pagar
-        inactivarProductosUsuario(idUsuario);
+        inactivarProductosUsuario(usuario.getId());
 
         //luego de verificarse de que el usuario no tenga productos con deudas, se inactiva
         usuario.setActivo(false);
@@ -152,19 +136,24 @@ public class UsuarioService {
 
         var saldoCuentasSecundarias = calcularSaldoCuentasSecundarias(cuentasAhorro); //almacena la sumatoria de los saldos
 
+        transferirFondosACuentaPrincipal(cuentasAhorro, saldoCuentasSecundarias);
+
+    }
+
+    private void transferirFondosACuentaPrincipal(List<CuentaAhorro> cuentasAhorro, BigDecimal saldoCuentasSecundarias) {
         for (CuentaAhorro cuenta : cuentasAhorro) { //Para cada cuenta de ahorro
             if (!cuenta.isEsPrincipal()) {
                 if (BigDecimal.ZERO.compareTo(cuenta.getSaldoDisponible()) != 0) {
                     cuenta.setSaldoDisponible(BigDecimal.ZERO); //reducir a 0 el saldo de las cuentas NO pricipales para que se refleje la transaccion entre cuentas
                 }
                 cuenta.setEstadoProducto(colocarEstadoProductos(EstadoProductoEnum.INACTIVO.name())); // Eliminar logicamente cuentas no principal
-            } else {
-                // Transferir saldo acumulado a la cuenta principal
-                // como ambos metodos estan referenciados por atributos BigDecimal podemos usar el metodo add
-                cuenta.setSaldoDisponible(cuenta.getSaldoDisponible().add(saldoCuentasSecundarias));
-                cuenta.setEstadoProducto(colocarEstadoProductos(EstadoProductoEnum.INACTIVO.name())); // Inactivar cuenta principal
-                cuentaRepository.save(cuenta);
             }
+
+            // Transferir saldo acumulado a la cuenta principal
+            // como ambos metodos estan referenciados por atributos BigDecimal podemos usar el metodo add
+            cuenta.setSaldoDisponible(cuenta.getSaldoDisponible().add(saldoCuentasSecundarias));
+            cuenta.setEstadoProducto(colocarEstadoProductos(EstadoProductoEnum.INACTIVO.name())); // Inactivar cuenta principal
+            cuentaRepository.save(cuenta);
         }
     }
 
@@ -208,16 +197,14 @@ public class UsuarioService {
 
     //metodo para actualizar los datos de un cliente
     public void actualizarDatosUsuario(Long usuarioId, ActualizarDatosUsuarioDTO datosUsuarioDTO) {
-        //verificar que el usuario exista
-        Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new UsuarioNotFoundException("Usuario no encontrado"));
+        Usuario usuario = obtenerUsuario(usuarioId);
 
         // Verificar si el usuario está inactivo
         if (!usuario.isActivo()) {
             throw new IllegalStateException("El usuario se encuentra inactivo.");
         }
 
-        actualizarDatos(usuario, datosUsuarioDTO); //se actualizan los datos del usuario
+        actualizarDatosUsuario(usuario, datosUsuarioDTO); //se actualizan los datos del usuario
         CuentaAhorro cuentaAhorro = obtenerCuentaPrincipal(usuarioId); //se busca la cuenta principal del usuario
         actualizarSaldoCuentaPrincipal(cuentaAhorro, datosUsuarioDTO.montoAdicinal()); //se actualiza el saldo de la cuenta asociada al usuario
 
@@ -241,7 +228,7 @@ public class UsuarioService {
     }
 
     //metodo auxiliar para actualizar datos
-    private void actualizarDatos(Usuario usuario, ActualizarDatosUsuarioDTO datosUsuarioDTO) {
+    private void actualizarDatosUsuario(Usuario usuario, ActualizarDatosUsuarioDTO datosUsuarioDTO) {
 
         usuario.setNombre(datosUsuarioDTO.nuevoNombre());
         usuario.setApellido(datosUsuarioDTO.nuevoApellido());
@@ -252,14 +239,13 @@ public class UsuarioService {
 
     //Se retorna una lista de todos los productos activos de un usuario
     public List<ProductoUsuarioDTO> obtenerProductosUsuario(Long usuarioId) {
-        // Verificar que el usuario exista
-        Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new UsuarioNotFoundException("Usuario no encontrado"));
+
+        Usuario usuario = obtenerUsuario(usuarioId);
 
         // Obtener los productos activos del usuario
-        List<CuentaAhorro> cuentasAhorro = listarCuentasAhorroActivas(usuarioId);
-        List<TarjetaCredito> tarjetasCredito = listarTarjetasCreditoActivas(usuarioId);
-        List<Prestamo> prestamos = listarPrestamosActivos(usuarioId);
+        List<CuentaAhorro> cuentasAhorro = listarCuentasAhorroActivas(usuario.getId());
+        List<TarjetaCredito> tarjetasCredito = listarTarjetasCreditoActivas(usuario.getId());
+        List<Prestamo> prestamos = listarPrestamosActivos(usuario.getId());
 
         return listarProductosUsuarios(cuentasAhorro, tarjetasCredito, prestamos);
     }
@@ -328,8 +314,30 @@ public class UsuarioService {
        /*
        Esta linea -> return generadorId.generarIdUnicoProducto(id ->cuentaRepository.existsByIdProducto(id));
        Hace lo mismo que la linea de abajo:
-       *  */
+       */
         return generadorId.generarIdUnicoProducto(cuentaRepository::existsByIdProducto); //se traduce del repositorio toma el metodo existsbyIdProducto como una referencia
+    }
+
+    private Usuario obtenerUsuario(Long usuarioId) {
+        return usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new UsuarioNotFoundException("Usuario no encontrado"));
+    }
+
+    private void validarCorreo(String correo) {
+        if (usuarioRepository.existsByCorreo(correo)) {
+            throw new DuplicatedItemsException("El nuevoCorreo ya se encuentra registrado en el sistema.");
+        }
+    }
+
+    private void validarCedula(String cedula) {
+        if (usuarioRepository.existsByCedula(cedula)) {
+            throw new DuplicatedItemsException("La cédula ya se encuentra registrada en el sistema.");
+        }
+    }
+
+    private TipoUsuario colocarTipoUsuario(String tipoUsuario) {
+        return tipoUsuarioRepository.findByNombreTipoUsuarioIgnoreCase(tipoUsuario)
+                .orElseThrow(() -> new TypeUserNotFoundException("Tipo de usuario no encontrado"));
     }
 
     private EstadoProducto colocarEstadoProductos(String nombreEstado) {
