@@ -16,7 +16,7 @@ import proyectoNetBanking.domain.usuarios.TipoUsuarioEnum;
 import proyectoNetBanking.domain.usuarios.Usuario;
 import proyectoNetBanking.dto.productos.ProductoUsuarioDTO;
 import proyectoNetBanking.dto.usuarios.ActualizarDatosUsuarioDTO;
-import proyectoNetBanking.dto.usuarios.DatosClienteDTO;
+import proyectoNetBanking.dto.usuarios.DatosUsuarioDTO;
 import proyectoNetBanking.infra.errors.CuentaNotFoundException;
 import proyectoNetBanking.infra.errors.DuplicatedItemsException;
 import proyectoNetBanking.infra.errors.TypeUserNotFoundException;
@@ -55,34 +55,58 @@ public class UsuarioService {
     @Autowired
     private EstadoProductoRepository estadoProductoRepository;
 
+
+    /**
+     * @clienteGuardado contiene el id generado por JPA,
+     * Los frameworks como JPA generan automáticamente el ID para las entidades persistidas,
+     * y este ID estará presente en el objeto retornado por save.
+     */
     //crear un cliente
-    public void crearUsuarioCliente(DatosClienteDTO datosClienteDTO) {
+    public void crearUsuario(DatosUsuarioDTO datosUsuarioDTO) {
 
-        validarCedula(datosClienteDTO.cedula());
-        validarCorreo(datosClienteDTO.correo());
+        validarCedula(datosUsuarioDTO.cedula());
+        validarCorreo(datosUsuarioDTO.correo());
 
-        var cliente = crearCliente(datosClienteDTO);
+        //Si el tipo de usuario introducido por admin es un cliente
+        if (TipoUsuarioEnum.CLIENTE.name().equalsIgnoreCase(datosUsuarioDTO.tipoUsuario())) {
+            var cliente = crearCliente(datosUsuarioDTO);
 
-        /*
-        clienteGuardado contiene el id generado por JPA,
-        Los frameworks como JPA generan automáticamente el ID para las entidades persistidas,
-        y este ID estará presente en el objeto retornado por save.
-        */
-        Usuario clienteGuardado = usuarioRepository.save(cliente);
+            Usuario clienteGuardado = usuarioRepository.save(cliente);
+            asignarCuentaPrincipal(clienteGuardado);//colocarle cuenta principal por motivos de logica de negocio
+        }
 
-        asignarCuentaPrincipal(clienteGuardado);//colocarle cuenta principal por motivos de logica de negocio
+        //Si el tipo de usuario introducido por admin es un administrador
+        if (TipoUsuarioEnum.ADMINISTRADOR.name().equalsIgnoreCase(datosUsuarioDTO.tipoUsuario())) {
+            var admin = crearAdministrador(datosUsuarioDTO);
+            Usuario adminGuardado = usuarioRepository.save(admin);
+        }
+
     }
 
-    private Usuario crearCliente(DatosClienteDTO datosClienteDTO) {
+    private Usuario crearCliente(DatosUsuarioDTO datosUsuarioDTO) {
 
         Usuario usuario = new Usuario();
-        usuario.setNombre(datosClienteDTO.nombre());
-        usuario.setApellido(datosClienteDTO.apellido());
-        usuario.setCedula(datosClienteDTO.cedula());
-        usuario.setCorreo(datosClienteDTO.correo());
-        usuario.setPassword(passwordEncoder.encode(datosClienteDTO.password()));//se hashea la contrasenia
+        usuario.setNombre(datosUsuarioDTO.nombre());
+        usuario.setApellido(datosUsuarioDTO.apellido());
+        usuario.setCedula(datosUsuarioDTO.cedula());
+        usuario.setCorreo(datosUsuarioDTO.correo());
+        usuario.setPassword(passwordEncoder.encode(datosUsuarioDTO.password()));//se hashea la contrasenia
         usuario.setTipoUsuario(colocarTipoUsuario(TipoUsuarioEnum.CLIENTE.name()));
-        usuario.setMontoInicial(datosClienteDTO.montoInicial());
+        usuario.setMontoInicial(datosUsuarioDTO.montoInicial());
+
+        return usuario;
+    }
+
+    private Usuario crearAdministrador(DatosUsuarioDTO datosUsuarioDTO) {
+
+        Usuario usuario = new Usuario();
+        usuario.setNombre(datosUsuarioDTO.nombre());
+        usuario.setApellido(datosUsuarioDTO.apellido());
+        usuario.setCedula(datosUsuarioDTO.cedula());
+        usuario.setCorreo(datosUsuarioDTO.correo());
+        usuario.setPassword(passwordEncoder.encode(datosUsuarioDTO.password()));//se hashea la contrasenia
+        usuario.setTipoUsuario(colocarTipoUsuario(TipoUsuarioEnum.ADMINISTRADOR.name()));
+        usuario.setMontoInicial(BigDecimal.ZERO);
 
         return usuario;
     }
@@ -140,6 +164,7 @@ public class UsuarioService {
 
     }
 
+    @Transactional
     private void transferirFondosACuentaPrincipal(List<CuentaAhorro> cuentasAhorro, BigDecimal saldoCuentasSecundarias) {
         for (CuentaAhorro cuenta : cuentasAhorro) { //Para cada cuenta de ahorro
             if (!cuenta.isEsPrincipal()) {
@@ -217,14 +242,11 @@ public class UsuarioService {
 
     //metodo para obtener la cuenta principal del usuario
     private CuentaAhorro obtenerCuentaPrincipal(Long usuarioId) {
-        CuentaAhorro cuentaPrincipal = cuentaRepository.findByUsuarioId(usuarioId)
+        return cuentaRepository.findByUsuarioId(usuarioId)
                 .stream()
                 .filter(CuentaAhorro::isEsPrincipal)
                 .findFirst()//extrae el primer registro en donde esPrincipal = true
                 .orElseThrow(() -> new CuentaNotFoundException("No se encontró una cuenta principal para este usuario"));
-
-        //retornar la cuenta principal
-        return cuentaPrincipal;
     }
 
     //metodo auxiliar para actualizar datos
@@ -249,7 +271,6 @@ public class UsuarioService {
 
         return listarProductosUsuarios(cuentasAhorro, tarjetasCredito, prestamos);
     }
-
 
     private List<CuentaAhorro> listarCuentasAhorroActivas(Long usuarioId) {
         return cuentaRepository.findByUsuarioId(usuarioId)

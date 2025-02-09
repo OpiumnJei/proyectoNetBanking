@@ -4,7 +4,7 @@ import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
 
-public record DatosClienteDTO(
+public record DatosUsuarioDTO(
         @NotBlank
         String nombre,
         @NotBlank
@@ -16,19 +16,22 @@ public record DatosClienteDTO(
         @Email(message = "El nuevoCorreo electronico es obligatorio")
         String correo,
         @NotBlank
-                @Size(min = 5, message = "La contraseña debe tener al menos 5 caracteres.")
+        @Size(min = 5, message = "La contraseña debe tener al menos 5 caracteres.")
         String password,
+        @NotBlank(message = "Introduzca un tipo de usuario valido.")
+        String tipoUsuario,
         @NotNull
         @DecimalMin(value = "0.0", inclusive = true, message = "El monto inicial no puede ser menor a cero")//se usa inclusive para asegurarnos se acepte el valor inicial como un cero
         BigDecimal montoInicial)
 {
     //constructor para gestionar los datos proporcionados por el usuario
-    public DatosClienteDTO(String nombre, String apellido, String cedula, String correo, String password, BigDecimal montoInicial) {
+    public DatosUsuarioDTO(String nombre, String apellido, String cedula, String correo, String password, String tipoUsuario, BigDecimal montoInicial) {
         this.nombre = nombre;
         this.apellido = apellido;
         this.cedula = cedula;
         this.correo = correo;
         this.password = password;
+        this.tipoUsuario = tipoUsuario.toUpperCase();
         this.montoInicial = montoInicial != null ? montoInicial : BigDecimal.ZERO;//ZERO = 0
     }
 }
