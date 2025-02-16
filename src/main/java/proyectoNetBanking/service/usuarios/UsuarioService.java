@@ -17,10 +17,7 @@ import proyectoNetBanking.domain.usuarios.Usuario;
 import proyectoNetBanking.dto.productos.ProductoUsuarioDTO;
 import proyectoNetBanking.dto.usuarios.ActualizarDatosUsuarioDTO;
 import proyectoNetBanking.dto.usuarios.DatosUsuarioDTO;
-import proyectoNetBanking.infra.errors.CuentaNotFoundException;
-import proyectoNetBanking.infra.errors.DuplicatedItemsException;
-import proyectoNetBanking.infra.errors.TypeUserNotFoundException;
-import proyectoNetBanking.infra.errors.UsuarioNotFoundException;
+import proyectoNetBanking.infra.errors.*;
 import proyectoNetBanking.repository.*;
 
 import java.math.BigDecimal;
@@ -221,7 +218,7 @@ public class UsuarioService {
     }
 
     //metodo para actualizar los datos de un cliente
-    public void actualizarDatosUsuario(Long usuarioId, ActualizarDatosUsuarioDTO datosUsuarioDTO) {
+    public void actualizarDatosCliente(Long usuarioId, ActualizarDatosUsuarioDTO datosUsuarioDTO) {
         Usuario usuario = obtenerUsuario(usuarioId);
 
         // Verificar si el usuario está inactivo
@@ -229,10 +226,26 @@ public class UsuarioService {
             throw new IllegalStateException("El usuario se encuentra inactivo.");
         }
 
-        actualizarDatosUsuario(usuario, datosUsuarioDTO); //se actualizan los datos del usuario
+        actualizarDatosCliente(usuario, datosUsuarioDTO);
         CuentaAhorro cuentaAhorro = obtenerCuentaPrincipal(usuarioId); //se busca la cuenta principal del usuario
         actualizarSaldoCuentaPrincipal(cuentaAhorro, datosUsuarioDTO.montoAdicinal()); //se actualiza el saldo de la cuenta asociada al usuario
 
+    }
+
+    public void actualizarDatosAdmin(Long usuarioId, ActualizarDatosUsuarioDTO datosUsuarioDTO) {
+        Usuario usuario = obtenerUsuario(usuarioId);
+
+        // Verificar si el usuario está inactivo
+        if (!usuario.isActivo()) {
+            throw new IllegalStateException("El usuario se encuentra inactivo.");
+        }
+
+        //verificar si el usuario es de tipo administrador
+        if("ADMINISTRADOR".equalsIgnoreCase(usuario.getTipoUsuario().getNombreTipoUsuario())){
+            throw new BusinessException("El usuario que se quiere actualizar no es un administrador.");
+        }
+
+        actualizarDatosAdmin(usuario, datosUsuarioDTO);
     }
 
     private void actualizarSaldoCuentaPrincipal(CuentaAhorro cuentaAhorro, BigDecimal montoAdicional) {
@@ -250,13 +263,23 @@ public class UsuarioService {
     }
 
     //metodo auxiliar para actualizar datos
-    private void actualizarDatosUsuario(Usuario usuario, ActualizarDatosUsuarioDTO datosUsuarioDTO) {
+    private void actualizarDatosCliente(Usuario cliente, ActualizarDatosUsuarioDTO datosUsuarioDTO) {
 
-        usuario.setNombre(datosUsuarioDTO.nuevoNombre());
-        usuario.setApellido(datosUsuarioDTO.nuevoApellido());
-        usuario.setPassword(passwordEncoder.encode(datosUsuarioDTO.newPassword()));
-        usuario.setCorreo(datosUsuarioDTO.nuevoCorreo());
-        usuario.setCedula(datosUsuarioDTO.nuevaCedula());
+        cliente.setNombre(datosUsuarioDTO.nuevoNombre());
+        cliente.setApellido(datosUsuarioDTO.nuevoApellido());
+        cliente.setPassword(passwordEncoder.encode(datosUsuarioDTO.newPassword()));
+        cliente.setCorreo(datosUsuarioDTO.nuevoCorreo());
+        cliente.setCedula(datosUsuarioDTO.nuevaCedula());
+    }
+
+    //metodo auxiliar para actualizar datos
+    private void actualizarDatosAdmin(Usuario admin, ActualizarDatosUsuarioDTO datosUsuarioDTO) {
+
+        admin.setNombre(datosUsuarioDTO.nuevoNombre());
+        admin.setApellido(datosUsuarioDTO.nuevoApellido());
+        admin.setPassword(passwordEncoder.encode(datosUsuarioDTO.newPassword()));
+        admin.setCorreo(datosUsuarioDTO.nuevoCorreo());
+        admin.setCedula(datosUsuarioDTO.nuevaCedula());
     }
 
     //Se retorna una lista de todos los productos activos de un usuario
