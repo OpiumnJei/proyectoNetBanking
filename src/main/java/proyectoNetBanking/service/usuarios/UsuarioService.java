@@ -2,6 +2,8 @@ package proyectoNetBanking.service.usuarios;
 
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,8 +17,7 @@ import proyectoNetBanking.domain.usuarios.TipoUsuario;
 import proyectoNetBanking.domain.usuarios.TipoUsuarioEnum;
 import proyectoNetBanking.domain.usuarios.Usuario;
 import proyectoNetBanking.dto.productos.ProductoUsuarioDTO;
-import proyectoNetBanking.dto.usuarios.ActualizarDatosUsuarioDTO;
-import proyectoNetBanking.dto.usuarios.DatosUsuarioDTO;
+import proyectoNetBanking.dto.usuarios.*;
 import proyectoNetBanking.infra.errors.*;
 import proyectoNetBanking.repository.*;
 
@@ -90,7 +91,7 @@ public class UsuarioService {
         usuario.setPassword(passwordEncoder.encode(datosUsuarioDTO.password()));//se hashea la contrasenia
         usuario.setTipoUsuario(colocarTipoUsuario(TipoUsuarioEnum.CLIENTE.name()));
         usuario.setMontoInicial(datosUsuarioDTO.montoInicial());
-
+        usuario.setActivo(true);
         return usuario;
     }
 
@@ -104,6 +105,7 @@ public class UsuarioService {
         usuario.setPassword(passwordEncoder.encode(datosUsuarioDTO.password()));//se hashea la contrasenia
         usuario.setTipoUsuario(colocarTipoUsuario(TipoUsuarioEnum.ADMINISTRADOR.name()));
         usuario.setMontoInicial(BigDecimal.ZERO);
+        usuario.setActivo(true);
 
         return usuario;
     }
@@ -121,6 +123,22 @@ public class UsuarioService {
 
         //guardar la cuenta
         cuentaRepository.save(cuentaUsuarioPrincipal);
+    }
+
+
+    public Page<ListaUsuariosDTO> listarUsuarios(Pageable pageable){
+
+        // paginas de beneficiarios
+        Page<Usuario> usuarios = usuarioRepository.findAll(pageable);
+
+        // se retornan los datos mapeados que contienen la informacion de la pagina actual
+        return usuarios.map( usuario -> new ListaUsuariosDTO(
+                usuario.getId(),
+                usuario.getNombre(),
+                usuario.getApellido(),
+                usuario.getTipoUsuario().getNombreTipoUsuario(),
+                usuario.isActivo()
+        ));
     }
 
     @Transactional // se ejecuta el codigo dentro de una transaccion
@@ -218,7 +236,7 @@ public class UsuarioService {
     }
 
     //metodo para actualizar los datos de un cliente
-    public void actualizarDatosCliente(Long usuarioId, ActualizarDatosUsuarioDTO datosUsuarioDTO) {
+    public ClienteResponseDTO actualizarDatosCliente(Long usuarioId, ActualizarDatosUsuarioDTO datosUsuarioDTO) {
         Usuario usuario = obtenerUsuario(usuarioId);
 
         // Verificar si el usuario está inactivo
@@ -230,9 +248,18 @@ public class UsuarioService {
         CuentaAhorro cuentaAhorro = obtenerCuentaPrincipal(usuarioId); //se busca la cuenta principal del usuario
         actualizarSaldoCuentaPrincipal(cuentaAhorro, datosUsuarioDTO.montoAdicinal()); //se actualiza el saldo de la cuenta asociada al usuario
 
+        //repuesta al cliente
+        return new ClienteResponseDTO(
+                datosUsuarioDTO.nuevoNombre(),
+                datosUsuarioDTO.nuevoApellido(),
+                datosUsuarioDTO.nuevaCedula(),
+                datosUsuarioDTO.nuevoCorreo(),
+                datosUsuarioDTO.newPassword(),
+                datosUsuarioDTO.montoAdicinal()
+        );
     }
 
-    public void actualizarDatosAdmin(Long usuarioId, ActualizarDatosUsuarioDTO datosUsuarioDTO) {
+    public AdminResponseDTO actualizarDatosAdmin(Long usuarioId, ActualizarDatosUsuarioDTO datosUsuarioDTO) {
         Usuario usuario = obtenerUsuario(usuarioId);
 
         // Verificar si el usuario está inactivo
@@ -246,6 +273,15 @@ public class UsuarioService {
         }
 
         actualizarDatosAdmin(usuario, datosUsuarioDTO);
+
+        // retorno al admin
+        return new AdminResponseDTO(
+                datosUsuarioDTO.nuevoNombre(),
+                datosUsuarioDTO.nuevoApellido(),
+                datosUsuarioDTO.nuevaCedula(),
+                datosUsuarioDTO.nuevoCorreo(),
+                datosUsuarioDTO.newPassword()
+        );
     }
 
     private void actualizarSaldoCuentaPrincipal(CuentaAhorro cuentaAhorro, BigDecimal montoAdicional) {
