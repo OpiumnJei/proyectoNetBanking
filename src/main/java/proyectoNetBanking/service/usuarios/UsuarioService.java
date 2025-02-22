@@ -2,6 +2,8 @@ package proyectoNetBanking.service.usuarios;
 
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,10 +17,7 @@ import proyectoNetBanking.domain.usuarios.TipoUsuario;
 import proyectoNetBanking.domain.usuarios.TipoUsuarioEnum;
 import proyectoNetBanking.domain.usuarios.Usuario;
 import proyectoNetBanking.dto.productos.ProductoUsuarioDTO;
-import proyectoNetBanking.dto.usuarios.ActualizarDatosUsuarioDTO;
-import proyectoNetBanking.dto.usuarios.AdminResponseDTO;
-import proyectoNetBanking.dto.usuarios.ClienteResponseDTO;
-import proyectoNetBanking.dto.usuarios.DatosUsuarioDTO;
+import proyectoNetBanking.dto.usuarios.*;
 import proyectoNetBanking.infra.errors.*;
 import proyectoNetBanking.repository.*;
 
@@ -124,6 +123,22 @@ public class UsuarioService {
 
         //guardar la cuenta
         cuentaRepository.save(cuentaUsuarioPrincipal);
+    }
+
+
+    public Page<ListaUsuariosDTO> listarUsuarios(Pageable pageable){
+
+        // paginas de beneficiarios
+        Page<Usuario> usuarios = usuarioRepository.findAll(pageable);
+
+        // se retornan los datos mapeados que contienen la informacion de la pagina actual
+        return usuarios.map( usuario -> new ListaUsuariosDTO(
+                usuario.getId(),
+                usuario.getNombre(),
+                usuario.getApellido(),
+                usuario.getTipoUsuario().getNombreTipoUsuario(),
+                usuario.isActivo()
+        ));
     }
 
     @Transactional // se ejecuta el codigo dentro de una transaccion
