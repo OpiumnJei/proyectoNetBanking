@@ -5,7 +5,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import proyectoNetBanking.domain.common.GeneradorId;
 import proyectoNetBanking.domain.cuentasAhorro.CuentaAhorro;
+import proyectoNetBanking.dto.prestamos.PrestamoResponseDTO;
 import proyectoNetBanking.infra.errors.DatosInvalidosException;
+import proyectoNetBanking.infra.errors.UsuarioInactivoException;
 import proyectoNetBanking.repository.CuentaAhorroRepository;
 import proyectoNetBanking.dto.prestamos.DatosPrestamoDTO;
 import proyectoNetBanking.domain.prestamos.Prestamo;
@@ -43,15 +45,19 @@ public class PrestamoService {
     private EstadoProductoRepository estadoProductoRepository;
 
     @Transactional
-    public void crearPrestamo(Long usuarioId, DatosPrestamoDTO datosPrestamoDTO) {
+    public PrestamoResponseDTO crearPrestamo(Long usuarioId, DatosPrestamoDTO datosPrestamoDTO) {
 
-        if (usuarioId == null || usuarioId <= 0) { //validar que numero no sea negativo ni nulo
+        if (usuarioId == null || usuarioId <= 0) {
             throw new DatosInvalidosException("El ID del usuario no puede ser nulo ni un número negativo");
         }
 
         //verificar que el usuario exista en la bd
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new UsuarioNotFoundException()); // en lugar de usar la lambda tambien se puede usar UsuarioNotFoundException::new
+
+        if (!usuario.isActivo()) {
+            throw new UsuarioInactivoException("El usuario introducido se encuentra inactivo");
+        }
         // Validar que el monto solicitado sea mayor o igual a 1,000 DOP
         if (datosPrestamoDTO.montoPrestamo().compareTo(MONTO_MINIMO_PRESTAMO) < 0) {
             throw new RuntimeException("El monto introducido es menor al monto minimo aceptado.");
@@ -63,6 +69,21 @@ public class PrestamoService {
         }
 
         //crear instancia de un prestamo
+        Prestamo prestamoCreado = asignarPrestamo(usuario, datosPrestamoDTO);
+
+        //se traslada el dinero a la cuenta principal
+        trasladarMontoACuentaPrincipal(prestamoCreado.getMontoPrestamo(), usuario.getId());
+
+        return new PrestamoResponseDTO(
+                prestamoCreado.getUsuario().getId(),
+                prestamoCreado.getIdProducto(),
+                prestamoCreado.getMontoPrestamo(),
+                prestamoCreado.getMontoApagar(),
+                prestamoCreado.getCreated()
+        );
+    }
+
+    private Prestamo asignarPrestamo(Usuario usuario, DatosPrestamoDTO datosPrestamoDTO) {
         Prestamo prestamo = new Prestamo();
         prestamo.setIdProducto(generarIdUnicoProducto());
         prestamo.setMontoPrestamo(datosPrestamoDTO.montoPrestamo());
@@ -71,13 +92,11 @@ public class PrestamoService {
         prestamo.setEstadoProducto(colocarEstadoProductos(EstadoProductoEnum.ACTIVO.name()));
         prestamo.setUsuario(usuario);
 
-        prestamoRepository.save(prestamo);
-        //se traslada el dinero a la cuenta principal
-        trasladarMontoACuentaPrincipal(prestamo.getMontoPrestamo(), usuario.getId());
+        return prestamoRepository.save(prestamo);
     }
 
 
-    public void trasladarMontoACuentaPrincipal(BigDecimal monto, Long idUsuario) {
+    private void trasladarMontoACuentaPrincipal(BigDecimal monto, Long idUsuario) {
 
         //buscar cuenta principal
         CuentaAhorro cuentaPrincipal = cuentaAhorroRepository.findByUsuarioId(idUsuario)
@@ -94,7 +113,7 @@ public class PrestamoService {
 
 
     //metodo encargado de la gestion de estados
-    public EstadoProducto colocarEstadoProductos(String nombreEstado) {
+    private EstadoProducto colocarEstadoProductos(String nombreEstado) {
 
         return estadoProductoRepository.findByNombreEstadoIgnoreCase(nombreEstado)
                 .orElseThrow(() -> new RuntimeException("El estado no existe"));
@@ -102,7 +121,7 @@ public class PrestamoService {
 
 
     //generar id del producto
-    public String generarIdUnicoProducto() {
+    private String generarIdUnicoProducto() {
        /*
        Esta linea -> return generadorId.generarIdUnicoProducto(id -> prestamo.existsByIdProducto(id));
        Hace lo mismo que la linea de abajo:
