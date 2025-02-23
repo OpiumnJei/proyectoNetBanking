@@ -159,6 +159,21 @@ public class UsuarioService {
         Usuario usuarioInactivo = usuarioRepository.save(usuario);
     }
 
+    @Transactional
+    public void activarUsuario(Long usuarioId) {
+
+        Usuario usuario = obtenerUsuario(usuarioId);
+
+        // Verificar si el usuario ya está inactivo
+        if (usuario.isActivo()) {
+            throw new IllegalStateException("El usuario se encuentra activo.");
+        }
+
+        //luego de verificarse de que el usuario no tenga productos con deudas, se inactiva
+        usuario.setActivo(true);
+        Usuario usuarioActivo = usuarioRepository.save(usuario);
+    }
+
     //inactivar todos los productos
     private void inactivarProductosUsuario(Long usuario) {
 
