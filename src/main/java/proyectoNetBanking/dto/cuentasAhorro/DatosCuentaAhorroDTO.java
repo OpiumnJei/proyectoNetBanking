@@ -9,19 +9,19 @@ import java.math.BigDecimal;
 
 @Builder()
 public record DatosCuentaAhorroDTO(
-        @NotNull(message = "Se necesita el id del usuario")
+        @NotNull(message = "El id del usuario no puede ser nulo.")
         Long usuarioId,
-        @DecimalMin(value = "0.0", inclusive = true, message = "El monto inicial no puede ser menor a cero")
+        @DecimalMin(value = "0.0", inclusive = true, message = "El monto inicial no puede ser menor a cero.")
         BigDecimal montoCuenta,
-        @NotBlank()
+        @NotBlank(message = "Es necesario especificar el proposito de la cuenta.")
         String proposito
 )
 {
     //constructor para gestionar los datos proporcionados por el usuario
     public DatosCuentaAhorroDTO(Long usuarioId, BigDecimal montoCuenta, String proposito) {
         this.usuarioId = usuarioId;                            //BigDecimal = 0
-        this.montoCuenta = montoCuenta != null ? montoCuenta : BigDecimal.ZERO; //expresion ternaria encargada de verificar si el monto enviado es diferente de nulo
-        this.proposito = proposito != null && !proposito.isBlank() ? proposito : "No especificado";
+        this.montoCuenta = montoCuenta == null ? BigDecimal.ZERO : montoCuenta;  //expresion ternaria encargada de verificar si el monto enviado es diferente de nulo
+        this.proposito = proposito;
     }
 
 }

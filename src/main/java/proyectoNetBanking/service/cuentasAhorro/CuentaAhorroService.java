@@ -8,9 +8,11 @@ import proyectoNetBanking.domain.cuentasAhorro.CuentaAhorro;
 import proyectoNetBanking.domain.productos.EstadoProducto;
 import proyectoNetBanking.domain.productos.EstadoProductoEnum;
 import proyectoNetBanking.domain.usuarios.Usuario;
+import proyectoNetBanking.dto.cuentasAhorro.CuentaResponseDTO;
 import proyectoNetBanking.dto.cuentasAhorro.DatosCuentaAhorroDTO;
 import proyectoNetBanking.dto.cuentasAhorro.DatosEliminarCuentaDTO;
 import proyectoNetBanking.infra.errors.CuentaNotFoundException;
+import proyectoNetBanking.infra.errors.UsuarioInactivoException;
 import proyectoNetBanking.infra.errors.UsuarioNotFoundException;
 import proyectoNetBanking.repository.CuentaAhorroRepository;
 import proyectoNetBanking.repository.EstadoProductoRepository;
@@ -35,13 +37,29 @@ public class CuentaAhorroService {
 
     //crear una cuenta de ahorro
     @Transactional
-    public void CrearCuentaAhorroSecundaria(DatosCuentaAhorroDTO datosCuentasAhorroDTO) {
+    public CuentaResponseDTO CrearCuentaAhorroSecundaria(DatosCuentaAhorroDTO datosCuentasAhorroDTO) {
 
         //verificar si el usuario existe
         Usuario usuario = obtenerUsuario(datosCuentasAhorroDTO.usuarioId());
 
+        if (!usuario.isActivo()) {
+            throw new UsuarioInactivoException("El usuario introducido se encuentra inactivo");
+        }
+
         validarLimiteCuentasUsuario(usuario.getId());
         // Validar límite de cuentas
+
+       CuentaAhorro cuentaSecundaria = guardarDatosCuenta(usuario, datosCuentasAhorroDTO);
+
+        return new CuentaResponseDTO(
+                cuentaSecundaria.getUsuario().getId(),
+                cuentaSecundaria.getSaldoDisponible(),
+                cuentaSecundaria.getProposito(),
+                cuentaSecundaria.getCreated()
+        );
+    }
+
+    private CuentaAhorro guardarDatosCuenta(Usuario usuario, DatosCuentaAhorroDTO datosCuentasAhorroDTO) {
 
         CuentaAhorro cuentaSecundaria = new CuentaAhorro();
         cuentaSecundaria.setIdProducto(generarIdUnicoProducto());
@@ -49,7 +67,8 @@ public class CuentaAhorroService {
         cuentaSecundaria.setSaldoDisponible((datosCuentasAhorroDTO.montoCuenta()));
         cuentaSecundaria.setProposito(datosCuentasAhorroDTO.proposito());
         cuentaSecundaria.setEstadoProducto(colocarEstadoProductos(EstadoProductoEnum.ACTIVO.name()));
-        cuentaAhorroRepository.save(cuentaSecundaria);
+
+        return cuentaAhorroRepository.save(cuentaSecundaria);
     }
 
     private void validarLimiteCuentasUsuario(Long usuarioId) {
@@ -62,9 +81,13 @@ public class CuentaAhorroService {
     @Transactional
     public void eliminarCuenta(DatosEliminarCuentaDTO datosEliminarCuenta) {
 
-        Usuario usuario = obtenerUsuario(datosEliminarCuenta.idUsuario());
+        Usuario usuario = obtenerUsuario(datosEliminarCuenta.usuarioId());
 
-        CuentaAhorro cuentaSecundaria = obtenerCuenta(datosEliminarCuenta.idCuenta());
+        if (!usuario.isActivo()) {
+            throw new UsuarioInactivoException("El usuario introducido se encuentra inactivo");
+        }
+
+        CuentaAhorro cuentaSecundaria = obtenerCuenta(datosEliminarCuenta.cuentaId());
 
         // Verificar que la cuenta pertenece al usuario
         if (!cuentaSecundaria.getUsuario().getId().equals(usuario.getId())) {
@@ -77,7 +100,7 @@ public class CuentaAhorroService {
         }
 
         // Obtener la cuenta principal del usuario
-        CuentaAhorro cuentaPrincipal = obtenerCuentaPrincipal(datosEliminarCuenta.idUsuario());
+        CuentaAhorro cuentaPrincipal = obtenerCuentaPrincipal(datosEliminarCuenta.usuarioId());
 
         // Transferir saldo si la cuenta secundaria tiene saldo mayor que cero
         if (cuentaSecundaria.getSaldoDisponible().compareTo(BigDecimal.ZERO) > 0) {
@@ -117,14 +140,14 @@ public class CuentaAhorroService {
     }
 
     //metodo encargado de la gestion de estados
-    public EstadoProducto colocarEstadoProductos(String nombreEstado) {
+    private EstadoProducto colocarEstadoProductos(String nombreEstado) {
 
         return estadoProductoRepository.findByNombreEstadoIgnoreCase(nombreEstado)
                 .orElseThrow(() -> new RuntimeException("El estado no existe"));
     }
 
     //generar id del producto
-    public String generarIdUnicoProducto() {
+    private String generarIdUnicoProducto() {
 
         return generadorId.generarIdUnicoProducto(cuentaAhorroRepository::existsByIdProducto); //se traduce del repositorio toma el metodo existsbyIdProducto como una referencia
     }
