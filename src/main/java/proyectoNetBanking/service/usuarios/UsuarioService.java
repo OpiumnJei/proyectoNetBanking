@@ -2,6 +2,8 @@ package proyectoNetBanking.service.usuarios;
 
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,8 +17,7 @@ import proyectoNetBanking.domain.usuarios.TipoUsuario;
 import proyectoNetBanking.domain.usuarios.TipoUsuarioEnum;
 import proyectoNetBanking.domain.usuarios.Usuario;
 import proyectoNetBanking.dto.productos.ProductoUsuarioDTO;
-import proyectoNetBanking.dto.usuarios.ActualizarDatosUsuarioDTO;
-import proyectoNetBanking.dto.usuarios.DatosUsuarioDTO;
+import proyectoNetBanking.dto.usuarios.*;
 import proyectoNetBanking.infra.errors.*;
 import proyectoNetBanking.repository.*;
 
@@ -90,7 +91,7 @@ public class UsuarioService {
         usuario.setPassword(passwordEncoder.encode(datosUsuarioDTO.password()));//se hashea la contrasenia
         usuario.setTipoUsuario(colocarTipoUsuario(TipoUsuarioEnum.CLIENTE.name()));
         usuario.setMontoInicial(datosUsuarioDTO.montoInicial());
-
+        usuario.setActivo(true);
         return usuario;
     }
 
@@ -104,6 +105,7 @@ public class UsuarioService {
         usuario.setPassword(passwordEncoder.encode(datosUsuarioDTO.password()));//se hashea la contrasenia
         usuario.setTipoUsuario(colocarTipoUsuario(TipoUsuarioEnum.ADMINISTRADOR.name()));
         usuario.setMontoInicial(BigDecimal.ZERO);
+        usuario.setActivo(true);
 
         return usuario;
     }
@@ -123,6 +125,22 @@ public class UsuarioService {
         cuentaRepository.save(cuentaUsuarioPrincipal);
     }
 
+
+    public Page<ListaUsuariosDTO> listarUsuarios(Pageable pageable){
+
+        // paginas de beneficiarios
+        Page<Usuario> usuarios = usuarioRepository.findAll(pageable);
+
+        // se retornan los datos mapeados que contienen la informacion de la pagina actual
+        return usuarios.map( usuario -> new ListaUsuariosDTO(
+                usuario.getId(),
+                usuario.getNombre(),
+                usuario.getApellido(),
+                usuario.getTipoUsuario().getNombreTipoUsuario(),
+                usuario.isActivo()
+        ));
+    }
+
     @Transactional // se ejecuta el codigo dentro de una transaccion
     public void inactivarUsuario(Long usuarioId) {
 
@@ -130,7 +148,7 @@ public class UsuarioService {
 
         // Verificar si el usuario ya está inactivo
         if (!usuario.isActivo()) {
-            throw new IllegalStateException("El usuario ya se encuentra inactivo.");
+            throw new UsuarioInactivoException("El usuario ya se encuentra inactivo.");
         }
 
         // verificar e inactivar productos que no tengan monto pendiente por pagar
@@ -139,6 +157,21 @@ public class UsuarioService {
         //luego de verificarse de que el usuario no tenga productos con deudas, se inactiva
         usuario.setActivo(false);
         Usuario usuarioInactivo = usuarioRepository.save(usuario);
+    }
+
+    @Transactional
+    public void activarUsuario(Long usuarioId) {
+
+        Usuario usuario = obtenerUsuario(usuarioId);
+
+        // Verificar si el usuario ya está inactivo
+        if (usuario.isActivo()) {
+            throw new UsuarioInactivoException("El usuario se encuentra activo.");
+        }
+
+        //luego de verificarse de que el usuario no tenga productos con deudas, se inactiva
+        usuario.setActivo(true);
+        Usuario usuarioActivo = usuarioRepository.save(usuario);
     }
 
     //inactivar todos los productos
@@ -218,26 +251,37 @@ public class UsuarioService {
     }
 
     //metodo para actualizar los datos de un cliente
-    public void actualizarDatosCliente(Long usuarioId, ActualizarDatosUsuarioDTO datosUsuarioDTO) {
+    public ClienteResponseDTO actualizarDatosCliente(Long usuarioId, ActualizarDatosUsuarioDTO datosUsuarioDTO) {
         Usuario usuario = obtenerUsuario(usuarioId);
 
         // Verificar si el usuario está inactivo
         if (!usuario.isActivo()) {
-            throw new IllegalStateException("El usuario se encuentra inactivo.");
+            throw new UsuarioInactivoException("El usuario se encuentra inactivo.");
         }
+
+        var montoAdicional = datosUsuarioDTO.montoAdicional();
 
         actualizarDatosCliente(usuario, datosUsuarioDTO);
         CuentaAhorro cuentaAhorro = obtenerCuentaPrincipal(usuarioId); //se busca la cuenta principal del usuario
-        actualizarSaldoCuentaPrincipal(cuentaAhorro, datosUsuarioDTO.montoAdicinal()); //se actualiza el saldo de la cuenta asociada al usuario
+        actualizarSaldoCuentaPrincipal(cuentaAhorro, montoAdicional); //se actualiza el saldo de la cuenta asociada al usuario
 
+        //repuesta al cliente
+        return new ClienteResponseDTO(
+                datosUsuarioDTO.nuevoNombre(),
+                datosUsuarioDTO.nuevoApellido(),
+                datosUsuarioDTO.nuevaCedula(),
+                datosUsuarioDTO.nuevoCorreo(),
+                datosUsuarioDTO.newPassword(),
+                datosUsuarioDTO.montoAdicional()
+        );
     }
 
-    public void actualizarDatosAdmin(Long usuarioId, ActualizarDatosUsuarioDTO datosUsuarioDTO) {
+    public AdminResponseDTO actualizarDatosAdmin(Long usuarioId, ActualizarDatosUsuarioDTO datosUsuarioDTO) {
         Usuario usuario = obtenerUsuario(usuarioId);
 
         // Verificar si el usuario está inactivo
         if (!usuario.isActivo()) {
-            throw new IllegalStateException("El usuario se encuentra inactivo.");
+            throw new UsuarioInactivoException("El usuario se encuentra inactivo.");
         }
 
         //verificar si el usuario es de tipo administrador
@@ -246,9 +290,21 @@ public class UsuarioService {
         }
 
         actualizarDatosAdmin(usuario, datosUsuarioDTO);
+
+        // retorno al admin
+        return new AdminResponseDTO(
+                datosUsuarioDTO.nuevoNombre(),
+                datosUsuarioDTO.nuevoApellido(),
+                datosUsuarioDTO.nuevaCedula(),
+                datosUsuarioDTO.nuevoCorreo(),
+                datosUsuarioDTO.newPassword()
+        );
     }
 
     private void actualizarSaldoCuentaPrincipal(CuentaAhorro cuentaAhorro, BigDecimal montoAdicional) {
+        if (montoAdicional == null) {
+            throw new DatosInvalidosException("El monto adicional no puede ser null");
+        }
         cuentaAhorro.setSaldoDisponible(cuentaAhorro.getSaldoDisponible().add(montoAdicional));
         cuentaRepository.save(cuentaAhorro);
     }
@@ -284,7 +340,6 @@ public class UsuarioService {
 
     //Se retorna una lista de todos los productos activos de un usuario
     public List<ProductoUsuarioDTO> obtenerProductosUsuario(Long usuarioId) {
-
         Usuario usuario = obtenerUsuario(usuarioId);
 
         // Obtener los productos activos del usuario
@@ -292,6 +347,10 @@ public class UsuarioService {
         List<TarjetaCredito> tarjetasCredito = listarTarjetasCreditoActivas(usuario.getId());
         List<Prestamo> prestamos = listarPrestamosActivos(usuario.getId());
 
+        // validar si el usuario tiene al menos un producto activo
+        if(cuentasAhorro.isEmpty() && tarjetasCredito.isEmpty() && prestamos.isEmpty()){
+            throw new ProductosNotFoundException("El usuario no tiene productos activos");
+        }
         return listarProductosUsuarios(cuentasAhorro, tarjetasCredito, prestamos);
     }
 
