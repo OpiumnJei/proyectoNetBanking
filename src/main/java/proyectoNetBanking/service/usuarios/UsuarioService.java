@@ -148,7 +148,7 @@ public class UsuarioService {
 
         // Verificar si el usuario ya está inactivo
         if (!usuario.isActivo()) {
-            throw new IllegalStateException("El usuario ya se encuentra inactivo.");
+            throw new UsuarioInactivoException("El usuario ya se encuentra inactivo.");
         }
 
         // verificar e inactivar productos que no tengan monto pendiente por pagar
@@ -166,7 +166,7 @@ public class UsuarioService {
 
         // Verificar si el usuario ya está inactivo
         if (usuario.isActivo()) {
-            throw new IllegalStateException("El usuario se encuentra activo.");
+            throw new UsuarioInactivoException("El usuario se encuentra activo.");
         }
 
         //luego de verificarse de que el usuario no tenga productos con deudas, se inactiva
@@ -256,7 +256,7 @@ public class UsuarioService {
 
         // Verificar si el usuario está inactivo
         if (!usuario.isActivo()) {
-            throw new IllegalStateException("El usuario se encuentra inactivo.");
+            throw new UsuarioInactivoException("El usuario se encuentra inactivo.");
         }
 
         var montoAdicional = datosUsuarioDTO.montoAdicional();
@@ -281,7 +281,7 @@ public class UsuarioService {
 
         // Verificar si el usuario está inactivo
         if (!usuario.isActivo()) {
-            throw new IllegalStateException("El usuario se encuentra inactivo.");
+            throw new UsuarioInactivoException("El usuario se encuentra inactivo.");
         }
 
         //verificar si el usuario es de tipo administrador
@@ -303,7 +303,7 @@ public class UsuarioService {
 
     private void actualizarSaldoCuentaPrincipal(CuentaAhorro cuentaAhorro, BigDecimal montoAdicional) {
         if (montoAdicional == null) {
-            throw new IllegalArgumentException("El monto adicional no puede ser null");
+            throw new DatosInvalidosException("El monto adicional no puede ser null");
         }
         cuentaAhorro.setSaldoDisponible(cuentaAhorro.getSaldoDisponible().add(montoAdicional));
         cuentaRepository.save(cuentaAhorro);

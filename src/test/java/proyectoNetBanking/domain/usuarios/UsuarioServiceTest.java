@@ -234,17 +234,6 @@ class UsuarioServiceTest {
         // Ejecutar el metodo a probar
         usuarioService.inactivarUsuario(usuarioId);
 
-        /*
-        codigo que verifica si un usuario se encuentra inactivo
-            IllegalStateException exception = Assertions.assertThrows(
-                IllegalStateException.class,
-                () -> usuarioService.inactivarUsuario(usuario.getId())
-        );
-
-        Assertions.assertEquals("El usuario ya se encuentra inactivo.", exception.getMessage());
-        System.out.println(exception.getMessage());
-        */
-
         // Verificar que el usuario este inactivo
         Assertions.assertFalse(usuario.isActivo(), "El usuario debería estar inactivo."); //mensaje a mostrar en caso de que la asercion no se cumpla
         System.out.println(usuario.isActivo()); //verificar el estado del usuario

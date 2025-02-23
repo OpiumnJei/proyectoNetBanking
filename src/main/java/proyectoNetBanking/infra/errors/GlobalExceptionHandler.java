@@ -57,9 +57,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
     }
 
-    // Manejar IllegalArgumentException (cuando el usuarioId es nulo)
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<String> tratarUsuarioIdInvalido(IllegalArgumentException ex) {
+    @ExceptionHandler(UsuarioInactivoException.class)
+    public ResponseEntity<String> tratarError400(UsuarioNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(DatosInvalidosException.class)
+    public ResponseEntity<String> tratarDatosInvalidos(DatosInvalidosException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 

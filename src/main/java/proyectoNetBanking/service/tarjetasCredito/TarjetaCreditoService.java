@@ -3,6 +3,7 @@ package proyectoNetBanking.service.tarjetasCredito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import proyectoNetBanking.infra.errors.DatosInvalidosException;
 import proyectoNetBanking.repository.CuentaAhorroRepository;
 import proyectoNetBanking.dto.tarjetasCredito.DatosTarjetaDTO;
 import proyectoNetBanking.domain.tarjetasCredito.TarjetaCredito;
@@ -32,7 +33,7 @@ public class TarjetaCreditoService {
     public void crearTarjetaCredito(Long usuarioId, DatosTarjetaDTO datosTarjetaDTO) {
 
         if (usuarioId == null || usuarioId <= 0) { //validar que numero no sea negativo ni nulo
-            throw new IllegalArgumentException("El ID del usuario no puede ser nulo ni un número negativo");
+            throw new DatosInvalidosException("El ID del usuario no puede ser nulo ni un número negativo");
         }
 
         //verificar que el usuario exista en la bd

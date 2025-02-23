@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import proyectoNetBanking.domain.common.GeneradorId;
 import proyectoNetBanking.domain.cuentasAhorro.CuentaAhorro;
+import proyectoNetBanking.infra.errors.DatosInvalidosException;
 import proyectoNetBanking.repository.CuentaAhorroRepository;
 import proyectoNetBanking.dto.prestamos.DatosPrestamoDTO;
 import proyectoNetBanking.domain.prestamos.Prestamo;
@@ -45,7 +46,7 @@ public class PrestamoService {
     public void crearPrestamo(Long usuarioId, DatosPrestamoDTO datosPrestamoDTO) {
 
         if (usuarioId == null || usuarioId <= 0) { //validar que numero no sea negativo ni nulo
-            throw new IllegalArgumentException("El ID del usuario no puede ser nulo ni un número negativo");
+            throw new DatosInvalidosException("El ID del usuario no puede ser nulo ni un número negativo");
         }
 
         //verificar que el usuario exista en la bd
@@ -90,7 +91,6 @@ public class PrestamoService {
 
         cuentaAhorroRepository.save(cuentaPrincipal);
     }
-
 
 
     //metodo encargado de la gestion de estados
