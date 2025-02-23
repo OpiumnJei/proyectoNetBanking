@@ -5,7 +5,7 @@ import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 
 public record ActualizarDatosUsuarioDTO(
-        @NotBlank
+        @NotBlank(message = "El nombre no puede ser nulo")
         String nuevoNombre,
         @NotBlank
         String nuevoApellido,
@@ -18,7 +18,8 @@ public record ActualizarDatosUsuarioDTO(
         @NotBlank
         @Size(min = 5, message = "La contraseña debe tener al menos 5 caracteres.")
         String newPassword,
+        @NotNull(message = "El monto adicional es obligatorio")
         @DecimalMin(value = "0.0", inclusive = true, message = "El monto adicional no puede ser menor a cero")//se usa inclusive para asegurarnos se acepte el valor inicial como un cero
-        BigDecimal montoAdicinal
+        BigDecimal montoAdicional
 ) {
 }

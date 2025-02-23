@@ -244,9 +244,11 @@ public class UsuarioService {
             throw new IllegalStateException("El usuario se encuentra inactivo.");
         }
 
+        var montoAdicional = datosUsuarioDTO.montoAdicional();
+
         actualizarDatosCliente(usuario, datosUsuarioDTO);
         CuentaAhorro cuentaAhorro = obtenerCuentaPrincipal(usuarioId); //se busca la cuenta principal del usuario
-        actualizarSaldoCuentaPrincipal(cuentaAhorro, datosUsuarioDTO.montoAdicinal()); //se actualiza el saldo de la cuenta asociada al usuario
+        actualizarSaldoCuentaPrincipal(cuentaAhorro, montoAdicional); //se actualiza el saldo de la cuenta asociada al usuario
 
         //repuesta al cliente
         return new ClienteResponseDTO(
@@ -255,7 +257,7 @@ public class UsuarioService {
                 datosUsuarioDTO.nuevaCedula(),
                 datosUsuarioDTO.nuevoCorreo(),
                 datosUsuarioDTO.newPassword(),
-                datosUsuarioDTO.montoAdicinal()
+                datosUsuarioDTO.montoAdicional()
         );
     }
 
@@ -285,6 +287,9 @@ public class UsuarioService {
     }
 
     private void actualizarSaldoCuentaPrincipal(CuentaAhorro cuentaAhorro, BigDecimal montoAdicional) {
+        if (montoAdicional == null) {
+            throw new IllegalArgumentException("El monto adicional no puede ser null");
+        }
         cuentaAhorro.setSaldoDisponible(cuentaAhorro.getSaldoDisponible().add(montoAdicional));
         cuentaRepository.save(cuentaAhorro);
     }
@@ -320,7 +325,6 @@ public class UsuarioService {
 
     //Se retorna una lista de todos los productos activos de un usuario
     public List<ProductoUsuarioDTO> obtenerProductosUsuario(Long usuarioId) {
-
         Usuario usuario = obtenerUsuario(usuarioId);
 
         // Obtener los productos activos del usuario
@@ -328,6 +332,10 @@ public class UsuarioService {
         List<TarjetaCredito> tarjetasCredito = listarTarjetasCreditoActivas(usuario.getId());
         List<Prestamo> prestamos = listarPrestamosActivos(usuario.getId());
 
+        // validar si el usuario tiene al menos un producto activo
+        if(cuentasAhorro.isEmpty() && tarjetasCredito.isEmpty() && prestamos.isEmpty()){
+            throw new ProductosNotFoundException("El usuario no tiene productos activos");
+        }
         return listarProductosUsuarios(cuentasAhorro, tarjetasCredito, prestamos);
     }
 
