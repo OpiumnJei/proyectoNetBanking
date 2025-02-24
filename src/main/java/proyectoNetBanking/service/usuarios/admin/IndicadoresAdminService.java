@@ -2,22 +2,18 @@ package proyectoNetBanking.service.usuarios.admin;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import proyectoNetBanking.repository.CuentaAhorroRepository;
-import proyectoNetBanking.repository.PrestamoRepository;
 import proyectoNetBanking.domain.productos.EstadoProducto;
-import proyectoNetBanking.repository.EstadoProductoRepository;
-import proyectoNetBanking.repository.TarjetaRepository;
 import proyectoNetBanking.domain.transacciones.TipoTransaccion;
-import proyectoNetBanking.repository.TransaccionRepository;
 import proyectoNetBanking.domain.usuarios.TipoUsuario;
-import proyectoNetBanking.repository.TipoUsuarioRepository;
-import proyectoNetBanking.repository.UsuarioRepository;
 import proyectoNetBanking.infra.errors.EstadoProductoNotFoundException;
 import proyectoNetBanking.infra.errors.TypeUserNotFoundException;
+import proyectoNetBanking.repository.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -89,6 +85,21 @@ public class IndicadoresAdminService {
         Long totalPagosBeneficiarios = contarPagosBeneficiarios();
         indicadoresPagos.put("totalPagosBeneficiarios", totalPagosBeneficiarios);
 
+        List<TipoTransaccion> tiposPagos = Arrays.asList( // Lista con los distintos tipos de pago
+                TipoTransaccion.PAGO_EXPRESO,
+                TipoTransaccion.PAGO_TARJETA,
+                TipoTransaccion.PAGO_PRESTAMO,
+                TipoTransaccion.PAGO_BENEFICIARIO
+        );
+
+        LocalDateTime inicioDia = LocalDate.now().atStartOfDay(); // Inicio del día
+
+        LocalDateTime finDia = inicioDia.plusDays(1).minusNanos(1); // Fin del día
+
+        // Contar los pagos del dia
+        Long pagosHoy = transaccionRepository.countByTipoTransaccionInAndFechaBetween(tiposPagos, inicioDia, finDia);
+        indicadoresPagos.put("pagosHoy", pagosHoy);
+
         return indicadoresPagos;
     }
 
@@ -117,7 +128,6 @@ public class IndicadoresAdminService {
         return indicadoresClientes;
     }
 
-
     /**
      * Las cantidades de productos activos asignados a los clientes.
      *
@@ -144,15 +154,15 @@ public class IndicadoresAdminService {
     }
 
     private Long contarCuentasActivas(EstadoProducto estadoActivo) {
-        return cuentaRepository.countByEstadoProductoId(estadoActivo);
+        return cuentaRepository.countByEstadoProductoId(estadoActivo.getId()); //se pasa el id del estado
     }
 
     private Long contarPrestamosActivos(EstadoProducto estadoActivo) {
-        return prestamoRepository.countByEstadoProductoId(estadoActivo);
+        return prestamoRepository.countByEstadoProductoId(estadoActivo.getId());
     }
 
     private Long contarTarjetasActivas(EstadoProducto estadoActivo) {
-        return tarjetaRepository.countByEstadoProductoId(estadoActivo);
+        return tarjetaRepository.countByEstadoProductoId(estadoActivo.getId());
     }
 
     private Long contarClientesActivos(TipoUsuario usuarioCliente) {
