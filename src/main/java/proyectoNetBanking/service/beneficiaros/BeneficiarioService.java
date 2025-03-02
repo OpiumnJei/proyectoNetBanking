@@ -5,16 +5,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import proyectoNetBanking.domain.beneficiarios.Beneficiario;
-import proyectoNetBanking.repository.BeneficiarioRepository;
-import proyectoNetBanking.dto.beneficiarios.DatosBeneficiarioDTO;
 import proyectoNetBanking.domain.cuentasAhorro.CuentaAhorro;
-import proyectoNetBanking.repository.CuentaAhorroRepository;
 import proyectoNetBanking.domain.usuarios.Usuario;
+import proyectoNetBanking.dto.beneficiarios.DatosBeneficiarioDTO;
+import proyectoNetBanking.dto.beneficiarios.ResponseDatosBeneficiarioDTO;
+import proyectoNetBanking.infra.errors.*;
+import proyectoNetBanking.repository.BeneficiarioRepository;
+import proyectoNetBanking.repository.CuentaAhorroRepository;
 import proyectoNetBanking.repository.UsuarioRepository;
-import proyectoNetBanking.infra.errors.BeneficiarioAlreadyExistsException;
-import proyectoNetBanking.infra.errors.BeneficiarioNotFoundException;
-import proyectoNetBanking.infra.errors.CuentaNotFoundException;
-import proyectoNetBanking.infra.errors.UsuarioNotFoundException;
 
 
 @Service
@@ -30,16 +28,16 @@ public class BeneficiarioService {
     private BeneficiarioRepository beneficiarioRepository;
 
     // crear un beneficiario
-    public void validarDatosBeneficiaro(DatosBeneficiarioDTO datosBeneficiarioDTO, Long usuarioId) {
-
-        String numeroCuenta = datosBeneficiarioDTO.numeroCuenta();
-        CuentaAhorro cuentaAhorro = cuentaRepository.findByIdProducto(numeroCuenta)
-                .orElseThrow(() -> new CuentaNotFoundException("El número de cuenta: " + numeroCuenta + " no coincide con ninguna cuenta."));
-
+    public ResponseDatosBeneficiarioDTO agregarBeneficiaro (Long usuarioId, DatosBeneficiarioDTO datosBeneficiarioDTO) {
 
         //verificar que el id del usuario exista
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(UsuarioNotFoundException::new);
+
+        String numeroCuenta = datosBeneficiarioDTO.numeroCuenta();
+
+        CuentaAhorro cuentaAhorro = cuentaRepository.findByIdProducto(numeroCuenta)
+                .orElseThrow(() -> new CuentaNotFoundException("El número de cuenta: " + numeroCuenta + " no coincide con ninguna cuenta."));
 
         //verificar si el usuario ya tiene al beneficiario agregado
         var beneficiarioExistente = beneficiarioRepository.existsByNumCuentaBeneficiarioAndUsuarioId(numeroCuenta, usuarioId);
@@ -48,26 +46,34 @@ public class BeneficiarioService {
             throw new BeneficiarioAlreadyExistsException("El beneficiario con número de cuenta " + numeroCuenta + " ya está registrado.");
         }
 
-        guardarBeneficiario(datosBeneficiarioDTO, usuario);
+      Beneficiario beneficiarioGuardado  = guardarBeneficiario(usuario, datosBeneficiarioDTO);
+
+        return new ResponseDatosBeneficiarioDTO(
+                beneficiarioGuardado.getUsuario().getId(),
+                beneficiarioGuardado.getNumCuentaBeneficiario(),
+                beneficiarioGuardado.getNombreBeneficiario()
+        );
 
     }
 
-    private void guardarBeneficiario(DatosBeneficiarioDTO datosBeneficiarioDTO, Usuario usuario) {
+    private Beneficiario guardarBeneficiario(Usuario usuario, DatosBeneficiarioDTO datosBeneficiarioDTO) {
 
         Beneficiario beneficiario = new Beneficiario();
         beneficiario.setUsuario(usuario);
         beneficiario.setNumCuentaBeneficiario(datosBeneficiarioDTO.numeroCuenta());
         beneficiario.setNombreBeneficiario(datosBeneficiarioDTO.nombreBeneficiario());
-        beneficiarioRepository.save(beneficiario);
+        return beneficiarioRepository.save(beneficiario);
     }
 
     //listar beneficiaros usando la paginacion
     //pageable permite espeficicar que cantidad de datos deben ser devueltos, tanto la forma en como los datos deben ordenarse, etc
     public Page<DatosBeneficiarioDTO> listarBeneficiarios(Long usuarioId, Pageable pageable){
 
-        // Verificar que el usuario exista
-        if (!usuarioRepository.existsById(usuarioId)) {
-            throw new UsuarioNotFoundException("Usuario no encontrado");
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new UsuarioNotFoundException("Usuario no encontrado"));
+
+        if(!usuario.isActivo()){
+            throw new UsuarioInactivoException("El usuario introducido se encuentra inactivo");
         }
 
         // paginas de beneficiarios
