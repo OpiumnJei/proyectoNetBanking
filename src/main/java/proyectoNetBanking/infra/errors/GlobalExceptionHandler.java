@@ -42,23 +42,28 @@ public class GlobalExceptionHandler {
 
     //tratar 404 usuario no encontrado
     @ExceptionHandler(UsuarioNotFoundException.class)
-    public ResponseEntity<String> tratarError404(UsuarioNotFoundException ex){
+    public ResponseEntity<String> tratarUsuarioNoEncontrado(UsuarioNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
     }
 
     //tratar 404 cuenta no encontrada
     @ExceptionHandler(CuentaNotFoundException.class)
-    public ResponseEntity<String> tratarError404(CuentaNotFoundException ex){
+    public ResponseEntity<String> tratarCuentaNoEncontrada(CuentaNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
     }
 
     @ExceptionHandler(ProductosNotFoundException.class)
-    public ResponseEntity<String> tratarError404(ProductosNotFoundException ex){
+    public ResponseEntity<String> tratarProductoNoEncontrado(ProductosNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(BeneficiarioNotFoundException.class)
+    public ResponseEntity<String> tratarBeneficiarioNoEncontrado(BeneficiarioNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
     }
 
     @ExceptionHandler(UsuarioInactivoException.class)
-    public ResponseEntity<String> tratarError400(UsuarioNotFoundException ex) {
+    public ResponseEntity<String> tratarUsuarioInactivo(UsuarioInactivoException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 
@@ -79,6 +84,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body("El valor de la variable de ruta es inválido: " + ex.getName());
+    }
+
+    // tratar 409
+    @ExceptionHandler(BeneficiarioAlreadyExistsException.class)
+    public ResponseEntity<String> tratarBeneficiarioExistente(BeneficiarioAlreadyExistsException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
     }
 
 }
