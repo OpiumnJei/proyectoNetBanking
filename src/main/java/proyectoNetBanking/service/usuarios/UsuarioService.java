@@ -342,6 +342,10 @@ public class UsuarioService {
     public List<ProductosClienteDTO> obtenerProductosCliente(Long usuarioId) {
         Usuario usuario = obtenerUsuario(usuarioId);
 
+        if(!usuario.isActivo()){
+            throw new UsuarioInactivoException("El usuario introducido se encuentra inactivo.");
+        }
+
         // Obtener los productos activos del usuario
         List<CuentaAhorro> cuentasAhorro = listarCuentasAhorroActivas(usuario.getId());
         List<TarjetaCredito> tarjetasCredito = listarTarjetasCreditoActivas(usuario.getId());
