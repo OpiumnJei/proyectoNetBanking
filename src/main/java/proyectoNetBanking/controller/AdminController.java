@@ -12,7 +12,6 @@ import proyectoNetBanking.dto.cuentasAhorro.DatosCuentaAhorroDTO;
 import proyectoNetBanking.dto.cuentasAhorro.DatosEliminarCuentaDTO;
 import proyectoNetBanking.dto.prestamos.DatosPrestamoDTO;
 import proyectoNetBanking.dto.prestamos.PrestamoResponseDTO;
-import proyectoNetBanking.dto.productos.ProductoUsuarioDTO;
 import proyectoNetBanking.dto.tarjetasCredito.DatosTarjetaDTO;
 import proyectoNetBanking.dto.tarjetasCredito.TarjetaCreditoResponseDTO;
 import proyectoNetBanking.dto.usuarios.*;
@@ -21,11 +20,13 @@ import proyectoNetBanking.service.prestamos.PrestamoService;
 import proyectoNetBanking.service.tarjetasCredito.TarjetaCreditoService;
 import proyectoNetBanking.service.usuarios.UsuarioService;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/usuarios")
 public class AdminController {
+
+
+    @Autowired
+    private UsuarioService usuarioService;
 
     @Autowired
     private CuentaAhorroService cuentaAhorroService;
@@ -40,15 +41,6 @@ public class AdminController {
     public ResponseEntity<String> crearUsuario(@RequestBody DatosUsuarioDTO datosUsuarioDTO) {
         usuarioService.crearUsuario(datosUsuarioDTO);
         return ResponseEntity.ok("Usuario creado exitosamente");
-    }
-
-    @Autowired
-    private UsuarioService usuarioService;
-
-    @GetMapping("/{usuarioId}/lista-productos")
-    public ResponseEntity<List<ProductoUsuarioDTO>> obtenerProductosActivos(@PathVariable Long usuarioId) {
-        List<ProductoUsuarioDTO> productos = usuarioService.obtenerProductosUsuario(usuarioId);
-        return ResponseEntity.ok(productos);
     }
 
     @GetMapping("/listar")
@@ -106,10 +98,5 @@ public class AdminController {
         PrestamoResponseDTO prestamoResponseDTO = prestamoService.crearPrestamo(usuarioId,datosPrestamoDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(prestamoResponseDTO);
     }
-
-
-
-
-
 
 }
