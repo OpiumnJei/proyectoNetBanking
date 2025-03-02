@@ -16,7 +16,7 @@ import proyectoNetBanking.domain.tarjetasCredito.TarjetaCredito;
 import proyectoNetBanking.domain.usuarios.TipoUsuario;
 import proyectoNetBanking.domain.usuarios.TipoUsuarioEnum;
 import proyectoNetBanking.domain.usuarios.Usuario;
-import proyectoNetBanking.dto.productos.ProductoUsuarioDTO;
+import proyectoNetBanking.dto.productos.ProductosClienteDTO;
 import proyectoNetBanking.dto.usuarios.*;
 import proyectoNetBanking.infra.errors.*;
 import proyectoNetBanking.repository.*;
@@ -338,9 +338,13 @@ public class UsuarioService {
         admin.setCedula(datosUsuarioDTO.nuevaCedula());
     }
 
-    //Se retorna una lista de todos los productos activos de un usuario
-    public List<ProductoUsuarioDTO> obtenerProductosUsuario(Long usuarioId) {
+    //Se retorna una lista de todos los productos activos de un cliente
+    public List<ProductosClienteDTO> obtenerProductosCliente(Long usuarioId) {
         Usuario usuario = obtenerUsuario(usuarioId);
+
+        if(!usuario.isActivo()){
+            throw new UsuarioInactivoException("El usuario introducido se encuentra inactivo.");
+        }
 
         // Obtener los productos activos del usuario
         List<CuentaAhorro> cuentasAhorro = listarCuentasAhorroActivas(usuario.getId());
@@ -375,12 +379,12 @@ public class UsuarioService {
                 .toList();
     }
 
-    private List<ProductoUsuarioDTO> listarProductosUsuarios(List<CuentaAhorro> cuentasAhorro, List<TarjetaCredito> tarjetasCredito, List<Prestamo> prestamos) {
-        List<ProductoUsuarioDTO> productos = new ArrayList<>();
+    private List<ProductosClienteDTO> listarProductosUsuarios(List<CuentaAhorro> cuentasAhorro, List<TarjetaCredito> tarjetasCredito, List<Prestamo> prestamos) {
+        List<ProductosClienteDTO> productos = new ArrayList<>();
 
         // Agregar cuentas de ahorro al listado
         for (CuentaAhorro cuenta : cuentasAhorro) {
-            productos.add(ProductoUsuarioDTO.builder() //usando builder de lombok
+            productos.add(ProductosClienteDTO.builder() //usando builder de lombok
                     .tipoProducto("Cuenta de ahorro")
                     .productoId(cuenta.getId())
                     .saldoDisponible(cuenta.getSaldoDisponible())
@@ -390,7 +394,7 @@ public class UsuarioService {
 
         // Agregar tarjetas de crédito al listado
         for (TarjetaCredito tarjeta : tarjetasCredito) {
-            productos.add(ProductoUsuarioDTO.builder()
+            productos.add(ProductosClienteDTO.builder()
                     .tipoProducto("Tarjeta de credito")
                     .productoId(tarjeta.getId())
                     .saldoPorPagar(tarjeta.getSaldoPorPagar())
@@ -400,7 +404,7 @@ public class UsuarioService {
 
         // Agregar préstamos al listado
         for (Prestamo prestamo : prestamos) {
-            productos.add(ProductoUsuarioDTO.builder()
+            productos.add(ProductosClienteDTO.builder()
                     .tipoProducto("Prestamo")
                     .productoId(prestamo.getId())
                     .saldoPorPagar(prestamo.getMontoApagar())
