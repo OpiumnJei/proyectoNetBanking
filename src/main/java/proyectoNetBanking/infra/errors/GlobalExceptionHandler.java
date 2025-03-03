@@ -2,6 +2,7 @@ package proyectoNetBanking.infra.errors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingPathVariableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -14,6 +15,16 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    // Manejo de solicitud sin cuerpo (body vacío)
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, String>> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+        Map<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("error", "El cuerpo de la solicitud está vacío o mal formado.");
+        errorResponse.put("solución", "Asegúrate de enviar un JSON válido con los campos requeridos.");
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
 
     //bad request(400) error del lado del cliente, para que las validaciones funcionen en el dto
     @ExceptionHandler(MethodArgumentNotValidException.class)//clase de la excepcion
@@ -64,6 +75,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(UsuarioInactivoException.class)
     public ResponseEntity<String> tratarUsuarioInactivo(UsuarioInactivoException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(CuentaInactivaException.class)
+    public ResponseEntity<String> tratarCuentaAhorroInactiva(CuentaInactivaException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 
