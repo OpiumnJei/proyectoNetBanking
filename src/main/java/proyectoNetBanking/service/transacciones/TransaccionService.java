@@ -21,15 +21,15 @@ public class TransaccionService {
 
 
     //metodo generico pa las transacciones
-    public Transaccion registrarTransaccion(TipoTransaccion tipo, CuentaAhorro cuentaOrigen, CuentaAhorro cuentaDestino, TarjetaCredito tarjetaCredito, Prestamo prestamo, BigDecimal monto, String descripcion) {
+    public Transaccion registrarTransaccion(TipoTransaccion tipoTransaccion, CuentaAhorro cuentaOrigen, CuentaAhorro cuentaDestino, TarjetaCredito tarjetaCredito, Prestamo prestamo, BigDecimal montoTransaccion, String descripcionTransaccion) {
         Transaccion transaccion = Transaccion.builder()
-                .tipoTransaccion(tipo)
+                .tipoTransaccion(tipoTransaccion)
                 .cuentaOrigen(cuentaOrigen)
                 .cuentaDestino(cuentaDestino)
                 .tarjetaCredito(tarjetaCredito)
                 .prestamo(prestamo)
-                .montoTransaccion(monto)
-                .descripcionTransaccion(descripcion)
+                .montoTransaccion(montoTransaccion)
+                .descripcionTransaccion(descripcionTransaccion)
                 .fecha(LocalDateTime.now()) //hora en la que se hizo la transaccion
                 .build();
         return transaccionRepository.save(transaccion);

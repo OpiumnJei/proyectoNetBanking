@@ -5,7 +5,6 @@ import lombok.*;
 import proyectoNetBanking.domain.cuentasAhorro.CuentaAhorro;
 import proyectoNetBanking.domain.prestamos.Prestamo;
 import proyectoNetBanking.domain.tarjetasCredito.TarjetaCredito;
-import proyectoNetBanking.domain.usuarios.Usuario;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -42,6 +41,7 @@ public class Transaccion {
     private Prestamo prestamo; // Relación opcional para pagos de préstamos
 
     @Column(nullable = false)
+    @JoinColumn(name = "monto_transaccion")
     private BigDecimal montoTransaccion;
 
     @Column(nullable = false, updatable = false)//se indica que el campo no puede ser nulo, ni se puede actualizar
