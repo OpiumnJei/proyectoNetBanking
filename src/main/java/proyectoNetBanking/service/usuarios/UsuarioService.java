@@ -164,14 +164,19 @@ public class UsuarioService {
 
         Usuario usuario = obtenerUsuario(usuarioId);
 
-        // Verificar si el usuario ya está inactivo
+        // Verificar si el usuario ya está activo
         if (usuario.isActivo()) {
-            throw new UsuarioInactivoException("El usuario se encuentra activo.");
+            throw new RuntimeException("El usuario se encuentra activo.");
         }
 
-        //luego de verificarse de que el usuario no tenga productos con deudas, se inactiva
         usuario.setActivo(true);
         Usuario usuarioActivo = usuarioRepository.save(usuario);
+
+        //reactivar la cuenta principal del usuario
+       CuentaAhorro cuentaPrincipal = obtenerCuentaPrincipal(usuarioActivo.getId());
+
+       cuentaPrincipal.setEstadoProducto(colocarEstadoProductos(EstadoProductoEnum.ACTIVO.name()));
+
     }
 
     //inactivar todos los productos
@@ -196,19 +201,27 @@ public class UsuarioService {
 
     @Transactional
     private void transferirFondosACuentaPrincipal(List<CuentaAhorro> cuentasAhorro, BigDecimal saldoCuentasSecundarias) {
-        for (CuentaAhorro cuenta : cuentasAhorro) { //Para cada cuenta de ahorro
-            if (!cuenta.isEsPrincipal()) {
-                if (BigDecimal.ZERO.compareTo(cuenta.getSaldoDisponible()) != 0) {
-                    cuenta.setSaldoDisponible(BigDecimal.ZERO); //reducir a 0 el saldo de las cuentas NO pricipales para que se refleje la transaccion entre cuentas
-                }
-                cuenta.setEstadoProducto(colocarEstadoProductos(EstadoProductoEnum.INACTIVO.name())); // Eliminar logicamente cuentas no principal
-            }
+        CuentaAhorro cuentaPrincipal = null;
 
-            // Transferir saldo acumulado a la cuenta principal
-            // como ambos metodos estan referenciados por atributos BigDecimal podemos usar el metodo add
-            cuenta.setSaldoDisponible(cuenta.getSaldoDisponible().add(saldoCuentasSecundarias));
-            cuenta.setEstadoProducto(colocarEstadoProductos(EstadoProductoEnum.INACTIVO.name())); // Inactivar cuenta principal
-            cuentaRepository.save(cuenta);
+        // Primero inactivamos las cuentas secundarias y encontramos la principal
+        for (CuentaAhorro cuenta : cuentasAhorro) {
+            if (cuenta.isEsPrincipal()) {
+                cuentaPrincipal = cuenta;
+            } else {
+                // Solo para cuentas secundarias
+                if (BigDecimal.ZERO.compareTo(cuenta.getSaldoDisponible()) != 0) {
+                    cuenta.setSaldoDisponible(BigDecimal.ZERO);
+                }
+                cuenta.setEstadoProducto(colocarEstadoProductos(EstadoProductoEnum.INACTIVO.name()));
+                cuentaRepository.save(cuenta);
+            }
+        }
+
+        // Ahora transferimos el saldo a la cuenta principal (si existe)
+        if (cuentaPrincipal != null) {
+            cuentaPrincipal.setSaldoDisponible(cuentaPrincipal.getSaldoDisponible().add(saldoCuentasSecundarias));
+            cuentaPrincipal.setEstadoProducto(colocarEstadoProductos(EstadoProductoEnum.INACTIVO.name())); //inactivamos la cuenta principal
+            cuentaRepository.save(cuentaPrincipal);
         }
     }
 
