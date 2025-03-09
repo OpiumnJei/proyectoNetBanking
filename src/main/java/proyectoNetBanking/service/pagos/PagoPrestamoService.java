@@ -4,21 +4,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import proyectoNetBanking.domain.cuentasAhorro.CuentaAhorro;
-import proyectoNetBanking.repository.CuentaAhorroRepository;
-import proyectoNetBanking.dto.pagos.DatosPagoPrestamoDTO;
 import proyectoNetBanking.domain.prestamos.Prestamo;
-import proyectoNetBanking.repository.PrestamoRepository;
 import proyectoNetBanking.domain.productos.EstadoProducto;
 import proyectoNetBanking.domain.productos.EstadoProductoEnum;
-import proyectoNetBanking.repository.EstadoProductoRepository;
 import proyectoNetBanking.domain.transacciones.TipoTransaccion;
 import proyectoNetBanking.domain.transacciones.Transaccion;
-import proyectoNetBanking.service.transacciones.TransaccionService;
 import proyectoNetBanking.domain.usuarios.Usuario;
+import proyectoNetBanking.dto.pagos.DatosPagoPrestamoDTO;
+import proyectoNetBanking.dto.pagos.ResponsePagoPrestamoDTO;
+import proyectoNetBanking.infra.errors.*;
+import proyectoNetBanking.repository.CuentaAhorroRepository;
+import proyectoNetBanking.repository.EstadoProductoRepository;
+import proyectoNetBanking.repository.PrestamoRepository;
 import proyectoNetBanking.repository.UsuarioRepository;
-import proyectoNetBanking.infra.errors.CuentaNotFoundException;
-import proyectoNetBanking.infra.errors.SaldoInsuficienteException;
-import proyectoNetBanking.infra.errors.UsuarioNotFoundException;
+import proyectoNetBanking.service.transacciones.TransaccionService;
 
 import java.math.BigDecimal;
 
@@ -38,25 +37,25 @@ public class PagoPrestamoService {
     private CuentaAhorroRepository cuentaAhorroRepository;
 
     @Autowired
-    private  EstadoProductoRepository estadoProductoRepository;
+    private EstadoProductoRepository estadoProductoRepository;
 
     //validar datos enviados por el admin
     @Transactional
-    public Transaccion realizarPagoPrestamo(Long prestamoId, DatosPagoPrestamoDTO datosPagoPrestamoDTO) {
+    public ResponsePagoPrestamoDTO realizarPagoPrestamo(Long prestamoId, DatosPagoPrestamoDTO datosPagoPrestamoDTO) {
 
         //verificar que el prestamo exista
         Prestamo prestamo = obtenerPrestamo(prestamoId);
 
         //verificar que el usuario exista en la bd
-        Usuario usuario = obtenerUsuario(datosPagoPrestamoDTO.idUsuario());
+        Usuario usuario = obtenerUsuario(datosPagoPrestamoDTO.usuarioId());
 
         if (prestamo.getMontoApagar().compareTo(BigDecimal.ZERO) == 0) {
-            throw new RuntimeException("El monto del prestamo ya ha sido saldado.");
+            throw new PrestamoYaSaldadoException("El monto del prestamo ya ha sido saldado.");
         }
 
         validarPrestamoUsuario(prestamo, usuario);  //validar que el prestamo pertenezca al usuario
 
-        Long cuentaId = datosPagoPrestamoDTO.idCuentaUsuario();
+        Long cuentaId = datosPagoPrestamoDTO.cuentaUsuarioId();
 
         //verificar que la cuenta exista y que pernezca al usuario
         CuentaAhorro cuentaAhorro = validarCuentaAhorro(cuentaId, usuario);
@@ -65,10 +64,13 @@ public class PagoPrestamoService {
 
         validarSaldoDisponible(cuentaAhorro, montoPago);
 
-        //realizar el pago
-        registrarPagoPrestamo(cuentaAhorro, prestamo, montoPago);
+        //igualar el monto a pagar con el monto de la deuda
+        BigDecimal montoPagoAjustado = ajustarMontoPago(prestamo, montoPago);
 
-        return transaccionService.registrarTransaccion(
+        //realizar el pago
+        registrarPagoPrestamo(cuentaAhorro, prestamo, montoPagoAjustado);
+
+        Transaccion transaccion = transaccionService.registrarTransaccion(
                 TipoTransaccion.PAGO_PRESTAMO,
                 cuentaAhorro,
                 null,
@@ -77,6 +79,18 @@ public class PagoPrestamoService {
                 montoPago,
                 "Se realizo un pago del prestamo"
         );
+
+        return new ResponsePagoPrestamoDTO(
+                transaccion.getId(),
+                transaccion.getTipoTransaccion(),
+                transaccion.getFecha(),
+                transaccion.getCuentaOrigen().getId(),
+                transaccion.getPrestamo().getId(),
+                transaccion.getMontoTransaccion(),
+                prestamo.getMontoApagar(),
+                "El pago del prestamo se realizó correctamente"
+        );
+
     }
 
     //pagar un prestamo y cambiar su estado
@@ -98,13 +112,23 @@ public class PagoPrestamoService {
         prestamoRepository.save(prestamo); //guardar en la bd
     }
 
+    //metodo gestiona la igualdad entre el monto pagado y el monto a pagar
+    private BigDecimal ajustarMontoPago(Prestamo prestamo, BigDecimal montoPago) {
 
-    private Prestamo validarPrestamoUsuario(Prestamo prestamo, Usuario usuario) {
-        if (!prestamo.getUsuario().getId().equals(usuario.getId())) {
-            throw new RuntimeException("El prestamo especificado no pertenece al usuario");
+        BigDecimal saldoPorPagar = prestamo.getMontoApagar(); //saldo a pagar
+
+        if (montoPago.compareTo(saldoPorPagar) > 0) {//si el monto a pagar es mayor que el saldo a pagar
+            //se paga lo que se debe lo demás no se usa
+            montoPago = saldoPorPagar; //la cantidad a pagar sera igual al saldo a paga
         }
 
-        return prestamo;
+        return montoPago;
+    }
+
+    private void validarPrestamoUsuario(Prestamo prestamo, Usuario usuario) {
+        if (!prestamo.getUsuario().getId().equals(usuario.getId())) {
+            throw new PrestamoNoPerteneceAUsuarioException("El prestamo especificado no pertenece al usuario.");
+        }
     }
 
     //verificar que Si el saldo disponible en la cuenta es menor al monto enviado por usuario
@@ -119,7 +143,7 @@ public class PagoPrestamoService {
                 .orElseThrow(() -> new CuentaNotFoundException("La cuenta de ahorro no existe."));
 
         if (!cuentaAhorro.getUsuario().getId().equals(usuario.getId())) {
-            throw new RuntimeException("La cuenta especificada no pertenece al usuario");
+            throw new CuentaNoPerteneceAUsuarioException("La cuenta especificada no pertenece al usuario");
         }
         return cuentaAhorro;
     }
@@ -131,7 +155,7 @@ public class PagoPrestamoService {
 
     private Prestamo obtenerPrestamo(Long prestamoId) {
         return prestamoRepository.findById(prestamoId)
-                .orElseThrow(() -> new RuntimeException("El prestamo no existe."));
+                .orElseThrow(() -> new PrestamoNotFoundException("El prestamo no existe."));
     }
     //metodo encargado de la gestion de estados
     private EstadoProducto colocarEstadoProductos(String nombreEstado) {
