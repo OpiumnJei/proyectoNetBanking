@@ -11,6 +11,7 @@ public record ResponsePagoTarjetaDTO(
         LocalDateTime fechaTransaccion,
         Long cuentaOrigenId,
         Long tarjetaId,
+        BigDecimal montoPago,
         BigDecimal saldoPorPagar,
         String mensaje
 ) {
