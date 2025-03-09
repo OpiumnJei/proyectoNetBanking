@@ -6,6 +6,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import proyectoNetBanking.domain.cuentasAhorro.CuentaAhorro;
+import proyectoNetBanking.dto.tarjetasCredito.ResponseAvanceEfectivoDTO;
 import proyectoNetBanking.repository.CuentaAhorroRepository;
 import proyectoNetBanking.domain.tarjetasCredito.TarjetaCredito;
 import proyectoNetBanking.repository.TarjetaRepository;
@@ -69,7 +70,7 @@ class AvanceEfectivoServiceTest {
         when(transaccionService.registrarTransaccion(any(), any(), any(), any(), any(), any(), any())).thenReturn(transaccion);
 
         // Ejecutar el metodo
-        Transaccion resultado = avanceEfectivoService.realizarAvanceEfectivo(avanceEfectivoDTO);
+        ResponseAvanceEfectivoDTO resultado = avanceEfectivoService.realizarAvanceEfectivo(avanceEfectivoDTO);
 
         // Verificar resultados
         assertNotNull(resultado);

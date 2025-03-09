@@ -105,6 +105,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
     }
 
+    @ExceptionHandler(TarjetaNotFoundException.class)
+    public ResponseEntity<String> tratarTarjetaNoEncontrada(TarjetaNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    }
+
+
     @ExceptionHandler(CuentaNotFoundException.class)
     public ResponseEntity<String> tratarCuentaNoEncontrada(CuentaNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
@@ -147,6 +153,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DuplicatedItemsException.class)
     public ResponseEntity<String> tratarRegistrosDuplicados(DuplicatedItemsException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
+    }
+
+    /**
+     * Tratar 422, generalmente cuando un usuario viola alguna regla de negocio
+     */
+    @ExceptionHandler(CreditoNoDisponibleException.class)
+    public ResponseEntity<String> tratarTarjetaSinCreditoDisponible(CreditoNoDisponibleException ex) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(ex.getMessage());
     }
 
 

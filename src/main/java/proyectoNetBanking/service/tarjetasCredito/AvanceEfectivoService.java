@@ -3,18 +3,20 @@ package proyectoNetBanking.service.tarjetasCredito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import proyectoNetBanking.dto.tarjetasCredito.AvanceEfectivoDTO;
 import proyectoNetBanking.domain.cuentasAhorro.CuentaAhorro;
-import proyectoNetBanking.repository.CuentaAhorroRepository;
-import proyectoNetBanking.repository.EstadoProductoRepository;
 import proyectoNetBanking.domain.tarjetasCredito.TarjetaCredito;
-import proyectoNetBanking.repository.TarjetaRepository;
 import proyectoNetBanking.domain.transacciones.TipoTransaccion;
 import proyectoNetBanking.domain.transacciones.Transaccion;
-import proyectoNetBanking.service.transacciones.TransaccionService;
-import proyectoNetBanking.repository.UsuarioRepository;
+import proyectoNetBanking.dto.tarjetasCredito.AvanceEfectivoDTO;
+import proyectoNetBanking.dto.tarjetasCredito.ResponseAvanceEfectivoDTO;
+import proyectoNetBanking.infra.errors.CreditoNoDisponibleException;
 import proyectoNetBanking.infra.errors.CuentaNotFoundException;
 import proyectoNetBanking.infra.errors.TarjetaNotFoundException;
+import proyectoNetBanking.repository.CuentaAhorroRepository;
+import proyectoNetBanking.repository.EstadoProductoRepository;
+import proyectoNetBanking.repository.TarjetaRepository;
+import proyectoNetBanking.repository.UsuarioRepository;
+import proyectoNetBanking.service.transacciones.TransaccionService;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -39,7 +41,7 @@ public class AvanceEfectivoService {
 
     // funcionalidad avance de efectivo
     @Transactional
-    public Transaccion realizarAvanceEfectivo(AvanceEfectivoDTO avanceEfectivoDTO) {
+    public ResponseAvanceEfectivoDTO realizarAvanceEfectivo(AvanceEfectivoDTO avanceEfectivoDTO) {
 
         // Validar que la tarjeta de crédito exista
         TarjetaCredito tarjetaCredito = obtenerTarjetaCredito(avanceEfectivoDTO.tarjetaCreditoId());
@@ -61,22 +63,30 @@ public class AvanceEfectivoService {
         // Actualizar deuda en la tarjeta de crédito
         actualizarSaldoPorPagar(tarjetaCredito, montoAvanceEfectivo, deudaTotal);
 
-        return transaccionService.registrarTransaccion(
+        Transaccion transaccion = transaccionService.registrarTransaccion(
                 TipoTransaccion.AVANCE_EFECTIVO,
                 cuentaAhorro,
                 null,
                 tarjetaCredito,
                 null,
                 montoAvanceEfectivo,
-                "Se realizo un avance de afectivo desde una tarjea de credito"
+                "Se realizo un avance de afectivo."
+        );
+
+        return new ResponseAvanceEfectivoDTO(
+                transaccion.getId(),
+                transaccion.getTipoTransaccion(),
+                transaccion.getFecha(),
+                transaccion.getTarjetaCredito().getId(),
+                transaccion.getCuentaOrigen().getId(),
+                transaccion.getMontoTransaccion(),
+                "El avance de efectivo se realizo exitosamente."
         );
     }
 
     private BigDecimal calcularMontoInteres(BigDecimal montoAvanceEfectivo) {
         BigDecimal interes =
-                montoAvanceEfectivo
-                        .multiply(BigDecimal
-                                .valueOf(0.0625)) // 6.25 % del monto tomado como avance
+                montoAvanceEfectivo.multiply(BigDecimal.valueOf(0.0625)) // 6.25 % del monto tomado como avance
                         .setScale(2, RoundingMode.HALF_UP); // redondeado a dos decimales hacia arriba
 
         //se retorna el monto total, montoAvanceEfectio + interes
@@ -85,7 +95,7 @@ public class AvanceEfectivoService {
 
     private void validarMontoAvance(BigDecimal montoAvanceEfectivo, TarjetaCredito tarjetaCredito) {
         if (montoAvanceEfectivo.compareTo(tarjetaCredito.getCreditoDisponible()) > 0) {// si el monto supera el credito disponible en la tarjeta
-            throw new RuntimeException("El monto del avance supera el crédito disponible de la tarjeta.");
+            throw new CreditoNoDisponibleException("El monto del avance supera el crédito disponible de la tarjeta.");
         }
     }
 
