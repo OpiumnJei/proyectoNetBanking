@@ -38,7 +38,7 @@ public class AdminController {
     private PrestamoService prestamoService;
 
     @PostMapping("/nuevo-usuario")
-    public ResponseEntity<String> crearUsuario(@RequestBody DatosUsuarioDTO datosUsuarioDTO) {
+    public ResponseEntity<String> crearUsuario(@RequestBody @Valid DatosUsuarioDTO datosUsuarioDTO) {
         usuarioService.crearUsuario(datosUsuarioDTO);
         return ResponseEntity.ok("Usuario creado exitosamente");
     }
@@ -70,7 +70,7 @@ public class AdminController {
     }
 
     @PutMapping("/actualizar/administradores/{id}")
-    public ResponseEntity<AdminResponseDTO> actualizarAdministrador(@PathVariable Long id, @RequestBody ActualizarDatosUsuarioDTO adminUpdateDTO) {
+    public ResponseEntity<AdminResponseDTO> actualizarAdministrador(@PathVariable Long id, @RequestBody @Valid ActualizarDatosUsuarioDTO adminUpdateDTO) {
         AdminResponseDTO usuarioActualizado = usuarioService.actualizarDatosAdmin(id, adminUpdateDTO);
         return ResponseEntity.ok(usuarioActualizado);
     }
