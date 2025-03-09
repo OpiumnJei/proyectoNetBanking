@@ -1,21 +1,23 @@
 package proyectoNetBanking.dto.usuarios;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
 
+@Valid
 public record DatosUsuarioDTO(
-        @NotBlank
+        @NotBlank(message = "El nombre del usuario es un campo requerido.")
         String nombre,
-        @NotBlank
+        @NotBlank(message = "El apellido del usuario es un campo requerido.")
         String apellido,
-        @NotBlank
+        @NotBlank(message = "La cedula del usuario es un campo requerido.")
         @Pattern(regexp = "\\d{11}", message = "La cédula debe contener 11 dígitos numéricos.") //usamos una expresion regular para controlar la cantidad de digitos de la cedula
         String cedula,
         @NotBlank
-        @Email(message = "El nuevoCorreo electronico es obligatorio")
+        @Email(message = "El correo electronico es obligatorio")
         String correo,
-        @NotBlank
+        @NotBlank(message = "La contrasenia es un campo obligatorio")
         @Size(min = 5, message = "La contraseña debe tener al menos 5 caracteres.")
         String password,
         @NotBlank(message = "Introduzca un tipo de usuario valido.")
