@@ -55,6 +55,7 @@ public class PagoExpresoService {
 
         return new ResponsePagoExpresoDTO(
                 transaccion.getId(),
+                transaccion.getTipoTransaccion(),
                 transaccion.getFecha(),
                 transaccion.getCuentaOrigen().getId(),
                 transaccion.getCuentaDestino().getIdProducto(),
