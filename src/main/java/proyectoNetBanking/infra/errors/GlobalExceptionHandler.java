@@ -57,6 +57,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
     }
 
+    //tratar 400 tarjeta sin saldo pendiente
+    @ExceptionHandler(TarjetaSinSaldoPendienteException.class)
+    public ResponseEntity<String> tratarTarjetaSinSaldoPorPagar(TarjetaSinSaldoPendienteException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+    }
+
     //tratar 404 cuenta no encontrada
     @ExceptionHandler(CuentaNotFoundException.class)
     public ResponseEntity<String> tratarCuentaNoEncontrada(CuentaNotFoundException ex) {
