@@ -5,13 +5,14 @@ import proyectoNetBanking.domain.transacciones.TipoTransaccion;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-public record ResponsePagoExpresoDTO(
+public record ResponsePagoPrestamoDTO(
         Long transaccionId,
         TipoTransaccion tipoTransaccion,
         LocalDateTime fechaTransaccion,
         Long cuentaOrigenId,
-        String cuentaDestino,
+        Long prestamoId,
         BigDecimal montoPago,
+        BigDecimal saldoPorPagar,
         String mensaje
-){
+) {
 }

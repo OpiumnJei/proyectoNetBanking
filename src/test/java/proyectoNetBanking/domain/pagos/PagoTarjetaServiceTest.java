@@ -7,6 +7,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import proyectoNetBanking.domain.cuentasAhorro.CuentaAhorro;
+import proyectoNetBanking.dto.pagos.ResponsePagoTarjetaDTO;
 import proyectoNetBanking.repository.CuentaAhorroRepository;
 import proyectoNetBanking.domain.tarjetasCredito.TarjetaCredito;
 import proyectoNetBanking.repository.TarjetaRepository;
@@ -71,7 +72,7 @@ class PagoTarjetaServiceTest {
         when(transaccionService.registrarTransaccion(any(), any(), any(), any(), any(), any(), any())).thenReturn(transaccion);
 
         // Ejecutar el método
-        Transaccion resultado = pagoTarjetaService.realizarPagoTarjetaCredito(idTarjeta, datosPagoTarjetaDTO);
+        ResponsePagoTarjetaDTO resultado = pagoTarjetaService.realizarPagoTarjetaCredito(idTarjeta, datosPagoTarjetaDTO);
 
         // Verificar resultados
         assertNotNull(resultado);

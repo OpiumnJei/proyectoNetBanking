@@ -51,26 +51,15 @@ public class GlobalExceptionHandler {
                 .body("La ruta solicitada no existe: " + ex.getRequestURL());
     }
 
-    //tratar 404 usuario no encontrado
-    @ExceptionHandler(UsuarioNotFoundException.class)
-    public ResponseEntity<String> tratarUsuarioNoEncontrado(UsuarioNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
-    }
+    /**
+     * Metodos que tratan 400, errores del lado del cliente
+     */
 
-    //tratar 404 cuenta no encontrada
-    @ExceptionHandler(CuentaNotFoundException.class)
-    public ResponseEntity<String> tratarCuentaNoEncontrada(CuentaNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
-    }
-
-    @ExceptionHandler(ProductosNotFoundException.class)
-    public ResponseEntity<String> tratarProductoNoEncontrado(ProductosNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
-    }
-
-    @ExceptionHandler(BeneficiarioNotFoundException.class)
-    public ResponseEntity<String> tratarBeneficiarioNoEncontrado(BeneficiarioNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    //Manejar MethodArgumentTypeMismatchException (cuando el tipo de la path variable es incorrecto)
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<String> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body("El valor de la variable de ruta es inválido: " + ex.getName());
     }
 
     @ExceptionHandler(UsuarioInactivoException.class)
@@ -95,17 +84,71 @@ public class GlobalExceptionHandler {
                 .body("Falta la variable de ruta: " + ex.getVariableName());
     }
 
-    // Manejar MethodArgumentTypeMismatchException (cuando el tipo de la path variable es incorrecto)
-    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<String> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body("El valor de la variable de ruta es inválido: " + ex.getName());
+    /**
+     * Metodos que tratan el 403 forbidden (intentar acceder a un recurso al que no se tiene acceso)
+     */
+    @ExceptionHandler(PrestamoNoPerteneceAUsuarioException.class)
+    public ResponseEntity<String> tratarPrestamoNoPerteneceAUsuario(PrestamoNoPerteneceAUsuarioException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ex.getMessage());
     }
 
-    // tratar 409
+    @ExceptionHandler(CuentaNoPerteneceAUsuarioException.class)
+    public ResponseEntity<String> tratarCuentaNoPerteneceAUsuario(CuentaNoPerteneceAUsuarioException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ex.getMessage());
+    }
+
+    /**
+     * Metodos que tratan el estado 404 not found
+     */
+    @ExceptionHandler(UsuarioNotFoundException.class)
+    public ResponseEntity<String> tratarUsuarioNoEncontrado(UsuarioNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(CuentaNotFoundException.class)
+    public ResponseEntity<String> tratarCuentaNoEncontrada(CuentaNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(ProductosNotFoundException.class)
+    public ResponseEntity<String> tratarProductoNoEncontrado(ProductosNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(BeneficiarioNotFoundException.class)
+    public ResponseEntity<String> tratarBeneficiarioNoEncontrado(BeneficiarioNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(PrestamoNotFoundException.class)
+    public ResponseEntity<String> tratarPrestamoNoEncontrado(PrestamoNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    }
+
+    /**
+     * Tratar 409, generalmente para cuando se intenta pagar un registro que ya esta pagado(saldado)
+     * o cuando se intenta crear un registro ya existente
+     */
+    @ExceptionHandler(TarjetaYaSaldadaException.class)
+    public ResponseEntity<String> tratarTarjetaYaPagada(TarjetaYaSaldadaException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(PrestamoYaSaldadoException.class)
+    public ResponseEntity<String> tratarPrestamoYaPagado(PrestamoYaSaldadoException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
+    }
+
     @ExceptionHandler(BeneficiarioAlreadyExistsException.class)
     public ResponseEntity<String> tratarBeneficiarioExistente(BeneficiarioAlreadyExistsException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
     }
+
+    @ExceptionHandler(DuplicatedItemsException.class)
+    public ResponseEntity<String> tratarRegistrosDuplicados(DuplicatedItemsException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
+    }
+
+
 
 }

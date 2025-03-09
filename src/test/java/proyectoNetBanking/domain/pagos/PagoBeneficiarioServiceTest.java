@@ -6,6 +6,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import proyectoNetBanking.domain.beneficiarios.Beneficiario;
+import proyectoNetBanking.dto.pagos.ResponsePagoBeneficiarioDTO;
 import proyectoNetBanking.repository.BeneficiarioRepository;
 import proyectoNetBanking.domain.cuentasAhorro.CuentaAhorro;
 import proyectoNetBanking.repository.CuentaAhorroRepository;
@@ -76,7 +77,7 @@ class PagoBeneficiarioServiceTest {
         when(transaccionService.registrarTransaccion(any(), any(), any(), any(), any(), any(), any())).thenReturn(transaccion);
 
         // Ejecutar el metodo
-        Transaccion resultado = pagoBeneficiarioService.realizarPagoBeneficiario(idBeneficiario, datosPagoBeneficiarioDTO);
+        ResponsePagoBeneficiarioDTO resultado = pagoBeneficiarioService.realizarPagoBeneficiario(idBeneficiario, datosPagoBeneficiarioDTO);
 
         // Verificar resultados
         assertNotNull(resultado);
