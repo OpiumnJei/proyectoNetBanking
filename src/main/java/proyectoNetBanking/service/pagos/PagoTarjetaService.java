@@ -12,7 +12,7 @@ import proyectoNetBanking.dto.pagos.ResponsePagoTarjetaDTO;
 import proyectoNetBanking.infra.errors.CuentaNotFoundException;
 import proyectoNetBanking.infra.errors.SaldoInsuficienteException;
 import proyectoNetBanking.infra.errors.TarjetaNotFoundException;
-import proyectoNetBanking.infra.errors.TarjetaSinSaldoPendienteException;
+import proyectoNetBanking.infra.errors.TarjetaYaSaldadaException;
 import proyectoNetBanking.repository.CuentaAhorroRepository;
 import proyectoNetBanking.repository.TarjetaRepository;
 import proyectoNetBanking.service.transacciones.TransaccionService;
@@ -39,7 +39,7 @@ public class PagoTarjetaService {
         TarjetaCredito tarjetaCredito = obtenerTarjetaCredito(tarjetaId);
 
         if(tarjetaCredito.getSaldoPorPagar().compareTo(BigDecimal.ZERO) == 0){
-            throw new TarjetaSinSaldoPendienteException("La tarjeta no tiene saldo pendiente por pagar.");
+            throw new TarjetaYaSaldadaException("La tarjeta no tiene saldo pendiente por pagar.");
         }
 
         CuentaAhorro cuentaAhorro = obtenerCuentaAhorroUsuario(datosPagoTarjetaDTO.cuentaId());
@@ -72,6 +72,7 @@ public class PagoTarjetaService {
                 transaccion.getFecha(),
                 transaccion.getCuentaOrigen().getId(),
                 transaccion.getTarjetaCredito().getId(),
+                transaccion.getMontoTransaccion(),
                 saldoPorPagar,
                 "El pago a la tarjeta se realizó correctamente"
         );
