@@ -4,12 +4,11 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import proyectoNetBanking.dto.pagos.DatosPagoExpresoDTO;
+import proyectoNetBanking.dto.pagos.DatosPagoTarjetaDTO;
 import proyectoNetBanking.dto.pagos.ResponsePagoExpresoDTO;
+import proyectoNetBanking.dto.pagos.ResponsePagoTarjetaDTO;
 import proyectoNetBanking.service.pagos.PagoBeneficiarioService;
 import proyectoNetBanking.service.pagos.PagoExpresoService;
 import proyectoNetBanking.service.pagos.PagoPrestamoService;
@@ -33,8 +32,14 @@ public class PagosController {
 
     @PostMapping("/realizar-pago-expreso")
     public ResponseEntity<ResponsePagoExpresoDTO> realizarPagoExpreso(@RequestBody @Valid DatosPagoExpresoDTO datosPagoExpresoDTO) {
-        ResponsePagoExpresoDTO nuevoPago = pagoExpresoService.realizarPagoExpreso(datosPagoExpresoDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(nuevoPago);
+        ResponsePagoExpresoDTO nuevoPagoPrestamo = pagoExpresoService.realizarPagoExpreso(datosPagoExpresoDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(nuevoPagoPrestamo);
+    }
+
+    @PostMapping("/realizar-pago-tarjeta/{tarjetaId}")
+    public ResponseEntity<ResponsePagoTarjetaDTO> realizarPagoTarjeta(@PathVariable Long tarjetaId, @RequestBody @Valid DatosPagoTarjetaDTO datosPagoTarjetaDTO) {
+        ResponsePagoTarjetaDTO nuevoPagoTarjeta = pagoTarjetaService.realizarPagoTarjetaCredito(tarjetaId,datosPagoTarjetaDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(nuevoPagoTarjeta);
     }
 
 }
