@@ -7,6 +7,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import proyectoNetBanking.domain.cuentasAhorro.CuentaAhorro;
+import proyectoNetBanking.dto.pagos.ResponsePagoPrestamoDTO;
 import proyectoNetBanking.repository.CuentaAhorroRepository;
 import proyectoNetBanking.domain.prestamos.Prestamo;
 import proyectoNetBanking.repository.PrestamoRepository;
@@ -88,7 +89,7 @@ class PagoPrestamoServiceTest {
         when(transaccionService.registrarTransaccion(any(), any(), any(), any(), any(), any(), any())).thenReturn(transaccion);
 
         // Ejecutar el método
-        Transaccion resultado = pagoPrestamoService.realizarPagoPrestamo(prestamoId, datosPagoPrestamoDTO);
+        ResponsePagoPrestamoDTO resultado = pagoPrestamoService.realizarPagoPrestamo(prestamoId, datosPagoPrestamoDTO);
 
         // Verificar resultados
         assertNotNull(resultado);
