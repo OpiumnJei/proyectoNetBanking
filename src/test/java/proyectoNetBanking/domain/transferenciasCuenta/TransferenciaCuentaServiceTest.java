@@ -6,6 +6,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import proyectoNetBanking.domain.cuentasAhorro.CuentaAhorro;
+import proyectoNetBanking.dto.cuentasAhorro.ResponseTransferenciaDTO;
 import proyectoNetBanking.repository.CuentaAhorroRepository;
 import proyectoNetBanking.dto.cuentasAhorro.DatosTransferenciaCuentaDTO;
 import proyectoNetBanking.domain.transacciones.TipoTransaccion;
@@ -63,7 +64,7 @@ class TransferenciaCuentaServiceTest {
         when(transaccionService.registrarTransaccion(any(), any(), any(), any(), any(), any(), any())).thenReturn(transaccion);
 
         // Ejecutar el método
-        Transaccion resultado = transferenciaCuentaService.realizarTransferenciaEnCuentas(datosTransferenciaDTO);
+        ResponseTransferenciaDTO resultado = transferenciaCuentaService.realizarTransferenciaEnCuentas(datosTransferenciaDTO);
 
         // Verificar resultados
         assertNotNull(resultado);
