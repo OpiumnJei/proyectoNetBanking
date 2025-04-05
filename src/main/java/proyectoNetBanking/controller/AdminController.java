@@ -21,7 +21,7 @@ import proyectoNetBanking.service.tarjetasCredito.TarjetaCreditoService;
 import proyectoNetBanking.service.usuarios.UsuarioService;
 
 @RestController
-@RequestMapping("/usuarios")
+@RequestMapping("netbanking/admin")
 public class AdminController {
 
 

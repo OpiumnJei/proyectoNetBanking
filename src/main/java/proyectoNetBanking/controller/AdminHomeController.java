@@ -9,7 +9,7 @@ import proyectoNetBanking.service.usuarios.admin.IndicadoresAdminService;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/netbanking/indicadores")
+@RequestMapping("netbanking/admin/indicadores")
 public class AdminHomeController {
 
     @Autowired
