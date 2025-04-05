@@ -12,7 +12,7 @@ import proyectoNetBanking.service.pagos.PagoPrestamoService;
 import proyectoNetBanking.service.pagos.PagoTarjetaService;
 
 @RestController
-@RequestMapping("netbanking/pagos")
+@RequestMapping("netbanking/cliente/pagos")
 public class PagosController {
 
     @Autowired
