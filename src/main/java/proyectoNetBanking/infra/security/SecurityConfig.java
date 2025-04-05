@@ -44,6 +44,7 @@ public class SecurityConfig {
                          .authenticationEntryPoint(tratar401()) // Usa el bean tratar401()
                          .accessDeniedHandler(tratar403()) // Usa el bean tratar403()
                  )
+                 //agregar el filtro de seguridad externo(securityFilter) antes que la configuracion de seguridad de esta clase
                  .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
