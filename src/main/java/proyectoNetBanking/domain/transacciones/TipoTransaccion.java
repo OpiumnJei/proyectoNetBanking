@@ -1,9 +1,11 @@
 package proyectoNetBanking.domain.transacciones;
 
-//    TRANSFERENCIA,
+// TRANSFERENCIA
 public enum TipoTransaccion {
-    PAGO_TERCERO,
-    PAGO_PROPIO,
-    RETIRO,
-    PAGO_TARJETA;
+    PAGO_EXPRESO,
+    PAGO_TARJETA,
+    PAGO_PRESTAMO,
+    PAGO_BENEFICIARIO,
+    AVANCE_EFECTIVO,
+    TRANSFERENCIA
 }

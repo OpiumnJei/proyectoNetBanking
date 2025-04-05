@@ -1,24 +1,22 @@
 package proyectoNetBanking.domain.usuarios;
 
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import proyectoNetBanking.domain.common.GeneradorId;
 import proyectoNetBanking.domain.cuentasAhorro.CuentaAhorro;
-import proyectoNetBanking.domain.cuentasAhorro.CuentaAhorroRepository;
 import proyectoNetBanking.domain.prestamos.Prestamo;
-import proyectoNetBanking.domain.prestamos.PrestamoRepository;
 import proyectoNetBanking.domain.productos.EstadoProducto;
-import proyectoNetBanking.domain.productos.EstadoProductoRepository;
 import proyectoNetBanking.domain.tarjetasCredito.TarjetaCredito;
-import proyectoNetBanking.domain.tarjetasCredito.TarjetaRepository;
+import proyectoNetBanking.dto.usuarios.DatosUsuarioDTO
+        ;
 import proyectoNetBanking.infra.errors.DuplicatedItemsException;
-import proyectoNetBanking.infra.errors.TypeUserNotFoundException;
+import proyectoNetBanking.repository.*;
+import proyectoNetBanking.service.usuarios.UsuarioService;
 
 import java.math.BigDecimal;
 import java.util.Collections;
@@ -36,16 +34,16 @@ class UsuarioServiceTest {
     private UsuarioRepository usuarioRepository;
 
     @Mock
-    private TipoUsuarioRepository tipoUsuarioRepository;
-
-    @Mock
-    private BCryptPasswordEncoder passwordEncoder;
-
-    @Mock
     private CuentaAhorroRepository cuentaRepository;
 
     @Mock
     private GeneradorId generadorId;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private TipoUsuarioRepository tipoUsuarioRepository;
 
     @Mock
     private EstadoProductoRepository estadoProductoRepository;
@@ -67,23 +65,25 @@ class UsuarioServiceTest {
     @DisplayName("Debería crear un cliente exitosamente y su cuenta ahorro principal, cuando los datos son válidos y no existen duplicados.")
     void crearClienteYCuentaDeAhorroPrincipal() {
         // Arrange: Preparar datos de entrada
-        DatosUsuarioDTO datosUsuario = new DatosUsuarioDTO(
-                "Juan",
-                "Pérez",
-                "123456789",
-                "juan.perez@example.com",
-                "password123",
-                2L,
-                BigDecimal.valueOf(1000)
-        );
+        //simular tipo usuario
+        TipoUsuario tipoUsuario = new TipoUsuario();
+        tipoUsuario.setNombreTipoUsuario(TipoUsuarioEnum.CLIENTE.name());
 
-        TipoUsuario tipoUsuario = new TipoUsuario(
-                2L,
-                "Cliente",
-                "Usuario que puede acceder a las funcionalidades de un cliente"
-        );
+        DatosUsuarioDTO
+                datosUsuario = new DatosUsuarioDTO
+                (
+                        "Juan",
+                        "Pérez",
+                        "123456789",
+                        "juan.perez@example.com",
+                        "password123",
+                        tipoUsuario.getNombreTipoUsuario(),
+                        BigDecimal.valueOf(1000)
+                );
+
 
         EstadoProducto estadoActivo = new EstadoProducto("Activo");
+
 
         Usuario usuarioCreado = new Usuario();
         usuarioCreado.setId(1L);
@@ -92,22 +92,23 @@ class UsuarioServiceTest {
         usuarioCreado.setCorreo(datosUsuario.correo());
         usuarioCreado.setPassword(datosUsuario.password());
         usuarioCreado.setCedula(datosUsuario.cedula());
-        usuarioCreado.setMontoInicial(datosUsuario.montoInicial());
         usuarioCreado.setTipoUsuario(tipoUsuario);
+        usuarioCreado.setMontoInicial(datosUsuario.montoInicial());
         usuarioCreado.setActivo(true);
 
         // Mocks de comportamiento
         Mockito.when(usuarioRepository.existsByCedula(usuarioCreado.getCedula())).thenReturn(false);//deberia retorna false, ya que la cedula no se encuentra duplicada
         Mockito.when(usuarioRepository.existsByCorreo(usuarioCreado.getCorreo())).thenReturn(false);
-        Mockito.when(tipoUsuarioRepository.findById(tipoUsuario.getId())).thenReturn(Optional.of(tipoUsuario));
+        Mockito.when(tipoUsuarioRepository.findByNombreTipoUsuarioIgnoreCase(tipoUsuario.getNombreTipoUsuario())).thenReturn(Optional.of(tipoUsuario));
         Mockito.when(usuarioRepository.save(Mockito.any(Usuario.class))).thenReturn(usuarioCreado);
         Mockito.when(generadorId.generarIdUnicoProducto(Mockito.any())).thenReturn("ABC123456");
         Mockito.when(estadoProductoRepository.findByNombreEstadoIgnoreCase("ACTIVO"))
                 .thenReturn(Optional.of(estadoActivo));
 
         // Act: Ejecutar el Metodo
-        usuarioService.crearCliente(datosUsuario);
+        usuarioService.crearUsuario(datosUsuario);
 
+        String password = passwordEncoder.encode(datosUsuario.password());
         // Assert: Capturar y validar la cuenta guardada
         Mockito.verify(cuentaRepository).save(cuentaCaptor.capture()); //captura los datos de la cuenta recien creada
         CuentaAhorro cuentaGuardada = cuentaCaptor.getValue();//almacena los datos extraidos por el cuentaCaptor
@@ -119,6 +120,7 @@ class UsuarioServiceTest {
         assertEquals(usuarioCreado.getApellido(), cuentaGuardada.getUsuario().getApellido());
         assertEquals(usuarioCreado.getCorreo(), cuentaGuardada.getUsuario().getCorreo());
         assertEquals(usuarioCreado.getPassword(), cuentaGuardada.getUsuario().getPassword());
+        System.out.println(usuarioCreado.getPassword());
         assertEquals(usuarioCreado.getCedula(), cuentaGuardada.getUsuario().getCedula());
         assertTrue(cuentaGuardada.isEsPrincipal());
         System.out.println(cuentaGuardada.isEsPrincipal());
@@ -133,24 +135,29 @@ class UsuarioServiceTest {
         // Configuración del entorno de prueba
         String cedulaExistente = "12345678901";
 
+        //simular tipo usuario
+        TipoUsuario tipoUsuario = new TipoUsuario();
+        tipoUsuario.setNombreTipoUsuario(TipoUsuarioEnum.CLIENTE.name());
         //datos de prueba
-        DatosUsuarioDTO datosUsuario = new DatosUsuarioDTO(
-                "John",
-                "Doe",
-                cedulaExistente,
-                "johndoe@example.com",
-                "password123",
-                2L, // tipoUsuarioId
-                BigDecimal.valueOf(1000) // montoInicial
-        );
+        DatosUsuarioDTO
+                datosUsuario = new DatosUsuarioDTO
+                (
+                        "John",
+                        "Doe",
+                        cedulaExistente,
+                        "johndoe@example.com",
+                        "password123",
+                        tipoUsuario.getNombreTipoUsuario(),
+                        BigDecimal.valueOf(1000) // montoInicial
+                );
 
         // Simular que la cédula ya está registrada
         Mockito.when(usuarioRepository.existsByCedula(cedulaExistente)).thenReturn(true);
 
         // Verificación y aserción
-        DuplicatedItemsException exception = Assertions.assertThrows(  //assertThrows verifica que se lance una excepción específica durante la ejecución de un bloque de código.
+        DuplicatedItemsException exception = assertThrows(  //assertThrows verifica que se lance una excepción específica durante la ejecución de un bloque de código.
                 DuplicatedItemsException.class, //tipo de excepcion que se espera sea lanzada
-                () -> usuarioService.crearCliente(datosUsuario) //se espera que dentro de usuarioService se lanze una exception en el metodo crearCliente
+                () -> usuarioService.crearUsuario(datosUsuario) //se espera que dentro de usuarioService se lanze una exception en el metodo crearCliente
         );
 
         //se comprueba que el string retornado en la excepcion, sea igual al string esperado
@@ -175,23 +182,31 @@ class UsuarioServiceTest {
 
         String correoExistente = "jerlinson@gmail.com";
 
-        DatosUsuarioDTO datosUsuarioDTO = new DatosUsuarioDTO(
-                "John",
-                "Doe",
-                "12020202",
-                correoExistente,
-                "password123",
-                2L, // tipoUsuarioId
-                BigDecimal.valueOf(1000) // montoInicial
-        );
+        //simular tipo usuario
+        TipoUsuario tipoUsuario = new TipoUsuario();
+        tipoUsuario.setNombreTipoUsuario(TipoUsuarioEnum.CLIENTE.name());
+        DatosUsuarioDTO
+                DatosUsuarioDTO
+                = new DatosUsuarioDTO
+                (
+                        "John",
+                        "Doe",
+                        "12020202",
+                        correoExistente,
+                        "password123",
+                        tipoUsuario.getNombreTipoUsuario(),
+                        BigDecimal.valueOf(1000) // montoInicial
+                );
 
         //emular que el nuevoCorreo ya esta registrado
-        Mockito.when(usuarioRepository.existsByCorreo(datosUsuarioDTO.correo())).thenReturn(true);
+        Mockito.when(usuarioRepository.existsByCorreo(DatosUsuarioDTO
+                .correo())).thenReturn(true);
 
         //verificacion y asercion
-        DuplicatedItemsException exception = Assertions.assertThrows(
+        DuplicatedItemsException exception = assertThrows(
                 DuplicatedItemsException.class, //excepcion a ser capturada
-                () -> usuarioService.crearCliente(datosUsuarioDTO) //dentro de usuario service y el metodo crearCliente
+                () -> usuarioService.crearUsuario(DatosUsuarioDTO
+                ) //dentro de usuario service y el metodo crearCliente
         );
 
         Assertions.assertEquals("El nuevoCorreo ya se encuentra registrado en el sistema.", exception.getMessage());
@@ -199,36 +214,6 @@ class UsuarioServiceTest {
         System.out.print(exception.getMessage());
         //comprobar que no se hayan guardado los datos del usuario si se lanza y captura la excepcionn
         Mockito.verify(usuarioRepository, Mockito.never()).save(Mockito.any(Usuario.class)); //mockito nunca guardo ningun objeto de tipo usuario
-    }
-
-    @Test
-    @DisplayName("Debe retornar una excepcion si el tipo de usuario introducido no existe")
-    void deberiaRetornarUnaExcepcionSiTipoUsuarioNoExiste() {
-
-        Long tipoUsuario = 3L;
-
-        DatosUsuarioDTO datosUsuario = new DatosUsuarioDTO(
-                "John",
-                "Doe",
-                "12020202",
-                "jerlin@gmail.com",
-                "password123",
-                tipoUsuario, // tipoUsuarioId
-                BigDecimal.valueOf(1000) // montoInicial
-        );
-
-        //simular que el tipo de usuario no se encuentra en el repositorio
-        Mockito.when(tipoUsuarioRepository.findById(datosUsuario.tipoUsuarioId())).thenReturn(Optional.empty());
-
-        TypeUserNotFoundException exception = Assertions.assertThrows(
-                TypeUserNotFoundException.class,
-                () -> usuarioService.crearCliente(datosUsuario)
-        );
-
-        Assertions.assertEquals("Tipo de usuario no encontrado", exception.getMessage());
-        System.out.println(exception.getMessage());
-
-        Mockito.verify(usuarioRepository, Mockito.never()).save(Mockito.any(Usuario.class));
     }
 
     @Test
@@ -248,17 +233,6 @@ class UsuarioServiceTest {
 
         // Ejecutar el metodo a probar
         usuarioService.inactivarUsuario(usuarioId);
-
-        /*
-        codigo que verifica si un usuario se encuentra inactivo
-            IllegalStateException exception = Assertions.assertThrows(
-                IllegalStateException.class,
-                () -> usuarioService.inactivarUsuario(usuario.getId())
-        );
-
-        Assertions.assertEquals("El usuario ya se encuentra inactivo.", exception.getMessage());
-        System.out.println(exception.getMessage());
-        */
 
         // Verificar que el usuario este inactivo
         Assertions.assertFalse(usuario.isActivo(), "El usuario debería estar inactivo."); //mensaje a mostrar en caso de que la asercion no se cumpla
@@ -295,7 +269,7 @@ class UsuarioServiceTest {
         Mockito.when(tarjetaRepository.findByUsuarioId(usuarioId)).thenReturn(tarjetasConSaldo);
 
         //capturar la excepcion generada por el mock
-        RuntimeException exception = Assertions.assertThrows(
+        RuntimeException exception = assertThrows(
                 RuntimeException.class,
                 () -> usuarioService.inactivarUsuario(usuario.getId())
         );
@@ -311,7 +285,7 @@ class UsuarioServiceTest {
 
     @Test
     @DisplayName("Al intentar inactivar un prestamo con un monto por pagar deberia retornar una excepcion.")
-    void deberiaLanzarExcepcionAlInacitvarUsuarioPrestamoPorPagar(){
+    void deberiaLanzarExcepcionAlInacitvarUsuarioPrestamoPorPagar() {
 
         Long usuarioId = 1L;
         Usuario usuario = crearUsuarioConProductos(usuarioId, true);
@@ -333,7 +307,7 @@ class UsuarioServiceTest {
 
         Mockito.when(prestamoRepository.findByUsuarioId(usuario.getId())).thenReturn(prestamoConSaldo); //retornar los prestamos que tenga el usario
 
-        RuntimeException exception = Assertions.assertThrows(
+        RuntimeException exception = assertThrows(
                 RuntimeException.class,
                 () -> usuarioService.inactivarUsuario(usuario.getId())
         );
