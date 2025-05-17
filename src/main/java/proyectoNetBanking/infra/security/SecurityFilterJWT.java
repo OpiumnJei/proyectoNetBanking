@@ -6,7 +6,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
@@ -16,7 +15,6 @@ import proyectoNetBanking.infra.authentication.TokenService;
 import proyectoNetBanking.repository.UsuarioRepository;
 
 import java.io.IOException;
-import java.util.Collection;
 
 @Component
 public class SecurityFilterJWT extends OncePerRequestFilter {
@@ -58,13 +56,6 @@ public class SecurityFilterJWT extends OncePerRequestFilter {
                         null, //null como contraseña, ya que no se esta usando una autenticacion stateful
                         userDetails.getAuthorities() // se obtiene el rol/es del usuario
                 );
-
-                // Para depuración
-                Collection<? extends GrantedAuthority> authorities = userDetails.getAuthorities();
-                System.out.println("DEBUG JWT: Autoridades para " + userDetails.getUsername() + ":");
-                for (GrantedAuthority auth : authorities) {
-                    System.out.println("  - " + auth.getAuthority());
-                }
 
                 /*
                  * Se registra la autenticación en el contexto de seguridad de Spring,
