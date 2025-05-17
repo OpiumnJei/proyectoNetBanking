@@ -30,13 +30,13 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(HttpMethod.POST, "netbanking/usuarios/login").permitAll() //permitir que cualquier usuario sin importar el rol se autentique
-                        .requestMatchers(HttpMethod.GET, "netbanking/admin/indicadores/**").hasRole("ADMINISTRADOR") //para acceder a los endpoints con el prefijo indicado se necesita ser admin
-                        .requestMatchers(HttpMethod.POST, "netbanking/admin/**").hasRole("ADMINISTRADOR")
-                        .requestMatchers(HttpMethod.DELETE, "netbanking/admin/**").hasRole("ADMINISTRADOR")
-                        .requestMatchers(HttpMethod.GET, "netbanking/admin/**").hasRole("ADMINISTRADOR")
-                        .requestMatchers(HttpMethod.PUT, "netbanking/admin/**").hasRole("ADMINISTRADOR")
-                        .requestMatchers(HttpMethod.POST, "netbanking/cliente/pagos/**").hasRole("CLIENTE")
+                        .requestMatchers(HttpMethod.POST, "/netbanking/usuarios/login").permitAll() //permitir que cualquier usuario sin importar el rol se autentique
+                        .requestMatchers(HttpMethod.GET, "/netbanking/admin/indicadores/**").hasRole("ADMINISTRADOR") //para acceder a los endpoints con el prefijo indicado se necesita ser admin
+                        .requestMatchers(HttpMethod.POST, "/netbanking/admin/**").hasRole("ADMINISTRADOR")
+                        .requestMatchers(HttpMethod.DELETE, "/netbanking/admin/**").hasRole("ADMINISTRADOR")
+                        .requestMatchers(HttpMethod.GET, "/netbanking/admin/**").hasRole("ADMINISTRADOR")
+                        .requestMatchers(HttpMethod.PUT, "/netbanking/admin/**").hasRole("ADMINISTRADOR")
+                        .requestMatchers(HttpMethod.POST, "/netbanking/cliente/pagos/**").hasRole("CLIENTE")
 
                         .anyRequest().authenticated()
                 )
