@@ -20,6 +20,7 @@ import proyectoNetBanking.dto.productos.ProductosClienteDTO;
 import proyectoNetBanking.dto.usuarios.*;
 import proyectoNetBanking.infra.errors.*;
 import proyectoNetBanking.repository.*;
+import proyectoNetBanking.service.correos.EmailService;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -53,6 +54,9 @@ public class UsuarioService {
     @Autowired
     private EstadoProductoRepository estadoProductoRepository;
 
+    @Autowired
+    private EmailService emailService;
+
 
     /**
      * @clienteGuardado contiene el id generado por JPA,
@@ -70,6 +74,8 @@ public class UsuarioService {
             var cliente = crearCliente(datosUsuarioDTO);
 
             Usuario clienteGuardado = usuarioRepository.save(cliente);
+            //enviar correo una vez el usuario se haya registrado
+            emailService.enviarCorreoBienvenida(clienteGuardado.getCorreo(), clienteGuardado.getNombre());
             asignarCuentaPrincipal(clienteGuardado);//colocarle cuenta principal por motivos de logica de negocio
         }
 
@@ -77,6 +83,7 @@ public class UsuarioService {
         if (TipoUsuarioEnum.ADMINISTRADOR.name().equalsIgnoreCase(datosUsuarioDTO.tipoUsuario())) {
             var admin = crearAdministrador(datosUsuarioDTO);
             Usuario adminGuardado = usuarioRepository.save(admin);
+            emailService.enviarCorreoBienvenida(adminGuardado.getCorreo(), adminGuardado.getNombre());
         }
 
     }
@@ -445,7 +452,7 @@ public class UsuarioService {
 
     private void validarCorreo(String correo) {
         if (usuarioRepository.existsByCorreo(correo)) {
-            throw new DuplicatedItemsException("El nuevoCorreo ya se encuentra registrado en el sistema.");
+            throw new DuplicatedItemsException("El correo ya se encuentra registrado en el sistema.");
         }
     }
 
