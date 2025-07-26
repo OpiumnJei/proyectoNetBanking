@@ -7,6 +7,7 @@ import proyectoNetBanking.domain.beneficiarios.Beneficiario;
 import proyectoNetBanking.domain.cuentasAhorro.CuentaAhorro;
 import proyectoNetBanking.domain.transacciones.TipoTransaccion;
 import proyectoNetBanking.domain.transacciones.Transaccion;
+import proyectoNetBanking.domain.usuarios.Usuario;
 import proyectoNetBanking.dto.pagos.DatosPagoBeneficiarioDTO;
 import proyectoNetBanking.dto.pagos.ResponsePagoBeneficiarioDTO;
 import proyectoNetBanking.infra.errors.*;
@@ -53,7 +54,7 @@ public class PagoBeneficiarioService {
 
         validarCuentaOrigenActiva(cuentaUsuario);
 
-        //validar que el usuario que desea realizar tenga al beneficiario previamente agregado
+        //validar que el usuario que desea realizar el pago tenga al beneficiario previamente agregado
         validarBeneficiarioUsuario(beneficiario, cuentaUsuario);
 
         BigDecimal montoPago = datosPagoBeneficiarioDTO.montoPago();
@@ -94,9 +95,13 @@ public class PagoBeneficiarioService {
         cuentaAhorroRepository.save(cuentaUsuario);
     }
 
+    // Asumiendo que el beneficiario tiene una referencia al usuario propietario
     private void validarBeneficiarioUsuario(Beneficiario beneficiario, CuentaAhorro cuentaUsuario) {
-        // Asumiendo que el beneficiario tiene una referencia al usuario propietario
-        if (!beneficiario.getUsuario().getId().equals(cuentaUsuario.getUsuario().getId())) {
+        Usuario usuarioDelBeneficiario = beneficiario.getUsuario();
+        Usuario usuarioDeLaCuenta = cuentaUsuario.getUsuario();
+
+        // Verifica si alguno de los usuarios es nulo o si sus IDs no coinciden
+        if (usuarioDelBeneficiario == null || usuarioDeLaCuenta == null || !usuarioDelBeneficiario.getId().equals(usuarioDeLaCuenta.getId())) {
             throw new BeneficiarioNoPerteneceAUsuarioException("El beneficiario especificado no pertenece al usuario de la cuenta origen.");
         }
     }

@@ -16,6 +16,7 @@ import proyectoNetBanking.dto.usuarios.DatosUsuarioDTO
         ;
 import proyectoNetBanking.infra.errors.DuplicatedItemsException;
 import proyectoNetBanking.repository.*;
+import proyectoNetBanking.service.correos.EmailService;
 import proyectoNetBanking.service.usuarios.UsuarioService;
 
 import java.math.BigDecimal;
@@ -53,6 +54,9 @@ class UsuarioServiceTest {
 
     @Mock
     private TarjetaRepository tarjetaRepository;
+
+    @Mock
+    private EmailService emailService;
 
     @Captor //es una anotación de Mockito que simplifica la creación de un ArgumentCaptor
     // se utiliza para capturar y analizar los valores reales que se pasan a un mock en tiempo de ejecución
@@ -97,6 +101,7 @@ class UsuarioServiceTest {
         usuarioCreado.setActivo(true);
 
         // Mocks de comportamiento
+
         Mockito.when(usuarioRepository.existsByCedula(usuarioCreado.getCedula())).thenReturn(false);//deberia retorna false, ya que la cedula no se encuentra duplicada
         Mockito.when(usuarioRepository.existsByCorreo(usuarioCreado.getCorreo())).thenReturn(false);
         Mockito.when(tipoUsuarioRepository.findByNombreTipoUsuarioIgnoreCase(tipoUsuario.getNombreTipoUsuario())).thenReturn(Optional.of(tipoUsuario));
@@ -209,7 +214,7 @@ class UsuarioServiceTest {
                 ) //dentro de usuario service y el metodo crearCliente
         );
 
-        Assertions.assertEquals("El nuevoCorreo ya se encuentra registrado en el sistema.", exception.getMessage());
+        Assertions.assertEquals("El correo ya se encuentra registrado en el sistema.", exception.getMessage());
 
         System.out.print(exception.getMessage());
         //comprobar que no se hayan guardado los datos del usuario si se lanza y captura la excepcionn

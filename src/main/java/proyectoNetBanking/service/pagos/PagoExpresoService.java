@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import proyectoNetBanking.domain.cuentasAhorro.CuentaAhorro;
 import proyectoNetBanking.domain.productos.EstadoProducto;
+import proyectoNetBanking.domain.productos.EstadoProductoEnum;
 import proyectoNetBanking.dto.pagos.ResponsePagoExpresoDTO;
 import proyectoNetBanking.infra.errors.CuentaInactivaException;
 import proyectoNetBanking.infra.errors.EstadoProductoNotFoundException;
@@ -66,8 +67,7 @@ public class PagoExpresoService {
 
     private void validarEstadoCuentaOrigen(CuentaAhorro cuentaOrigen) {
 
-        String estado = "Activo";
-        EstadoProducto estadoActivo = estadoProductoRepository.findByNombreEstadoIgnoreCase(estado)
+        EstadoProducto estadoActivo = estadoProductoRepository.findByNombreEstadoIgnoreCase(EstadoProductoEnum.ACTIVO.name())
                 .orElseThrow(() -> new EstadoProductoNotFoundException("Estado no encontrado"));
 
         boolean estadoCuentaAhorro = cuentaAhorroRepository.existsByIdAndEstadoProducto(cuentaOrigen.getId(), estadoActivo);
