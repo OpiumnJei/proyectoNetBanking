@@ -64,6 +64,11 @@ class AvanceEfectivoServiceTest {
         Transaccion transaccion = new Transaccion();
         transaccion.setId(1L);
 
+        // --- AÑADE ESTA LÍNEA ---
+        transaccion.setTarjetaCredito(tarjetaCredito); // Asigna la tarjeta a la transacción
+        transaccion.setCuentaOrigen(cuentaAhorro);
+        transaccion.setMontoTransaccion(montoAvanceEfectivo);
+
         // Configurar mocks
         when(tarjetaRepository.findById(tarjetaCreditoId)).thenReturn(Optional.of(tarjetaCredito));
         when(cuentaAhorroRepository.findById(cuentaAhorroId)).thenReturn(Optional.of(cuentaAhorro));
@@ -88,7 +93,7 @@ class AvanceEfectivoServiceTest {
                 tarjetaCredito,
                 null,
                 montoAvanceEfectivo,
-                "Se realizo un avance de afectivo desde una tarjea de credito"
+                "Se realizo un avance de afectivo."
         );
     }
 
