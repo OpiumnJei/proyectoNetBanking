@@ -65,6 +65,9 @@ class PagoTarjetaServiceTest {
         // Simular transacción
         Transaccion transaccion = new Transaccion();
         transaccion.setId(1L);
+        transaccion.setCuentaOrigen(cuentaAhorro);
+        transaccion.setTarjetaCredito(tarjetaCredito);
+        transaccion.setMontoTransaccion(montoPago);
 
         // Configurar mocks
         when(tarjetaRepository.findById(idTarjeta)).thenReturn(Optional.of(tarjetaCredito));
@@ -113,6 +116,7 @@ class PagoTarjetaServiceTest {
         // simular tarjeta
         TarjetaCredito tarjetaCredito = new TarjetaCredito();
         tarjetaCredito.setId(idTarjeta);
+        tarjetaCredito.setSaldoPorPagar(new BigDecimal("300.00"));
 
         // Configurar mocks
         when(cuentaAhorroRepository.findById(idCuenta)).thenReturn(Optional.of(cuentaAhorro));
