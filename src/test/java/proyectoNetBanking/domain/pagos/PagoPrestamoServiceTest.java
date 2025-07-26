@@ -81,6 +81,10 @@ class PagoPrestamoServiceTest {
         // Simular transacción
         Transaccion transaccion = new Transaccion();
         transaccion.setId(1L);
+        transaccion.setCuentaOrigen(cuentaAhorro);
+        transaccion.setPrestamo(prestamo);
+        transaccion.setMontoTransaccion(montoPago);
+
 
         // Configurar mocks
         when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
@@ -230,7 +234,7 @@ class PagoPrestamoServiceTest {
                 });
 
         // Verificar mensaje de excepción
-        assertEquals("El prestamo especificado no pertenece al usuario", exception.getMessage());
+        assertEquals("El prestamo especificado no pertenece al usuario.", exception.getMessage());
 
         // Verificar que no se llamó a registrarTransaccion
         verify(transaccionService, never()).registrarTransaccion(any(), any(), any(), any(), any(), any(), any());
