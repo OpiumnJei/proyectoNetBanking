@@ -1,0 +1,66 @@
+ # Especifica la versión de la sintaxis del archivo Docker Compose.
+  version: '3.9'
+
+  # Define todos los contenedores (servicios) que componen la aplicación.
+  services:
+    # Define el servicio para la aplicación Java.
+    java_app:
+      # Asigna un nombre personalizado y fácil de recordar al contenedor.
+      container_name: java_app
+      # Nombra y etiqueta la imagen que se creará a partir del Dockerfile.
+      image: netbanking-api-rest:1.0.0
+      # Indica que la imagen se debe construir usando el Dockerfile del directorio actual (.).
+      build: .
+      # Mapea el puerto 8080 de la máquina host al puerto 8080 del contenedor.
+      ports:
+        - "8080:8080"
+      # Define variables de entorno para la aplicación dentro del contenedor.
+      environment:
+        # La URL para que la aplicación se conecte a la base de datos (usa el nombre del servicio 'java_db').
+        - DATASOURCE_URL=jdbc:mysql://java_db:3306/netbanking
+        # El nombre de usuario para la conexión a la base de datos.
+        - DATASOURCE_USERNAME=root
+        # La contraseña para la conexión a la base de datos.
+        - DATASOURCE_PASSWORD=12345
+        # Una clave secreta para uso interno de la aplicación (ej. para tokens JWT).
+        - SECRET_KEY=backend1234
+      # Establece una dependencia de inicio con otro servicio.
+      depends_on:
+        java_db:
+          # Condición: no iniciar 'java_app' hasta que 'java_db' esté reportado como "saludable".
+          condition: service_healthy
+
+    # Define el servicio para la base de datos MySQL.
+    java_db:
+      # Asigna un nombre personalizado al contenedor de la base de datos.
+      container_name: java_db
+      # Utiliza la imagen oficial de MySQL versión 8.0 desde Docker Hub.
+      image: mysql:8.0
+      # Mapea el puerto 3307 de la máquina host al puerto 3306 (default de MySQL) del contenedor.
+      ports:
+        - "3307:3306"
+      # Define variables de entorno para configurar el contenedor de MySQL.
+      environment:
+        # Establece la contraseña para el usuario 'root' de MySQL.
+        MYSQL_ROOT_PASSWORD: 12345
+        # Crea automáticamente una base de datos con este nombre al iniciar.
+        MYSQL_DATABASE: netbanking
+      # Monta un volumen para que los datos de la base de datos persistan.
+      volumes:
+        # Vincula el volumen nombrado 'db_data' al directorio de datos de MySQL dentro del contenedor.
+        - db_data:/var/lib/mysql
+      # Define una comprobación de estado para verificar si el servicio está funcionando correctamente.
+      healthcheck:
+        # El comando que se ejecuta para verificar la salud (un ping al servidor MySQL).
+        test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-p$${MYSQL_ROOT_PASSWORD}" ]
+        # El intervalo de tiempo entre cada comprobación (10 segundos).
+        interval: 10s
+        # El tiempo máximo de espera para que la comprobación responda (5 segundos).
+        timeout: 5s
+        # El número de reintentos fallidos antes de marcar el contenedor como "no saludable".
+        retries: 5
+
+  # Declara los volúmenes nombrados que se usarán en los servicios.
+  volumes:
+    # Define el volumen 'db_data' para el almacenamiento persistente de la base de datos.
+    db_data:
