@@ -2,14 +2,13 @@ package proyectoNetBanking.domain.common;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.stereotype.Component;
 import proyectoNetBanking.domain.productos.EstadoProducto;
-import proyectoNetBanking.repository.EstadoProductoRepository;
 import proyectoNetBanking.domain.usuarios.TipoUsuario;
+import proyectoNetBanking.repository.EstadoProductoRepository;
 import proyectoNetBanking.repository.TipoUsuarioRepository;
 
 //CLASE USADA PARA LA INICIALIZACION DE LOS DATOS CRITICOS/ESENCIALES
-@Component
+//@Component
 public class DataInitializer implements CommandLineRunner {
 
     @Autowired
